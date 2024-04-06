@@ -92,8 +92,8 @@
     /* color-1(#5F9295)
      * color-2(#2D2327)
      */
-    --color-1                      : hsla(183, 22%, 48%, 1);
-    --color-2                      : hsla(336, 13%, 16%, 1);
+    --color-1                      : hsla(0, 0%, 12%, 1);
+    --color-2                      : hsl(0, 0%, 9%, 1);
 
     /* theme color variations
      */
