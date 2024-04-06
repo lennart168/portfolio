@@ -97,10 +97,10 @@
 
     /* theme color variations
      */
-    --color-1-lighter              : hsla(183, 22%, 68%, 1);
-    --color-1-light                : hsla(183, 22%, 58%, 1);
-    --color-1-dark                 : hsla(183, 22%, 38%, 1);
-    --color-1-darker               : hsla(183, 22%, 28%, 1);
+    --color-1-lighter              : hsla(0, 0%, 20%, 1);
+    --color-1-light                : hsla(0, 0%, 16%, 1);
+    --color-1-dark                 : hsla(0, 0%, 8%, 1);
+    --color-1-darker               : hsla(0, 0%, 3%, 1);
 
     --color-2-lighter              : hsla(336, 13%, 36%, 1);
     --color-2-light                : hsla(336, 13%, 26%, 1);
@@ -177,7 +177,7 @@
 
     /* others
      */
-    --color-body                   : #CFE6E8;
+    --color-body                   : hsla(0, 0%, 80%, 1);
     --color-border                 : rgba(0, 0, 0, .08);
     --border-radius                : 3px;
 }
