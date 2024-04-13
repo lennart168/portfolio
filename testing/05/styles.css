@@ -8,14 +8,10 @@
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
 }
 
-.header-item {
-    background-color: #f22a7e;
-}
 .header-item-right {
     display: flex;
     align-items: center;
     justify-content: right;
-    background-color: #a72c7e;
 }
 
 .basic-grid {
