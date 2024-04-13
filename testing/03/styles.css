@@ -6,14 +6,16 @@
 .header-menu {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    grid-column-gap: 3rem;
-    grid-row-gap: 3rem;
 }
 
+.header-item {
+    background-color: green;
+}
 .header-item-right {
     display: flex;
     align-items: center;
     justify-content: right;
+    background-color: red;
 }
 
 .basic-grid {
