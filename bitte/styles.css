@@ -36,3 +36,7 @@ h2 {
   font-weight: <weight>;
   font-style: normal;
 }
+
+video::-webkit-media-controls-start-playback-button {
+  display: none;
+}
