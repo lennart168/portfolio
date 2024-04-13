@@ -17,7 +17,9 @@ body {
 }
 
 .header-item-right {
-    text-align: right;
+    display: flex;
+  align-items: center;
+  justify-content: right;
 }
 
 .basic-grid {
