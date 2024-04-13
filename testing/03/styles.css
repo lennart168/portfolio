@@ -6,7 +6,8 @@
 .header-menu {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-
+    grid-column-gap: 3rem;
+    grid-row-gap: 3rem;
 }
 
 .header-item-right {
@@ -18,7 +19,11 @@
 .basic-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-
+    grid-column-gap: 3rem;
+    grid-row-gap: 3rem;
+    margin-top: 3rem;
+    margin-left: 5rem;
+    margin-right: 5rem;
 }
 
 .grid-item {
@@ -79,12 +84,5 @@ visibility: hidden;
     background-color: #cacaca;
     box-shadow: 10px 5px 5px grey;
 }
-
-
-    grid-column-gap: 3rem;
-    grid-row-gap: 3rem;
-    margin-top: 3rem;
-    margin-left: 5rem;
-    margin-right: 5rem;
     **/
     
