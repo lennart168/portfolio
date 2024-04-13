@@ -29,8 +29,8 @@ body {
 }
 
 .grid-item {
-    outline: 10px solid #cacaca; border-radius: 1em;
-    background-color: #cacaca;
+
+    background-color: #fff;
     box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
 }
 
