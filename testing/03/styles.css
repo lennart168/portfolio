@@ -9,13 +9,13 @@
 }
 
 .header-item {
-    background-color: green;
+    background-color: #f22a7e;
 }
 .header-item-right {
     display: flex;
     align-items: center;
     justify-content: right;
-    background-color: red;
+    background-color: #a72c7e;
 }
 
 .basic-grid {
