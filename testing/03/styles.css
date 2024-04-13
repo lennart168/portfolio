@@ -22,8 +22,8 @@
     grid-column-gap: 3rem;
     grid-row-gap: 3rem;
     margin-top: 3rem;
-    margin-left: 3vh;
-    margin-right: 3vh;
+    margin-left: 1rem;
+    margin-right: 1rem;
 }
 
 .grid-item {
