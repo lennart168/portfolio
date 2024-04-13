@@ -3,6 +3,12 @@
     font-family: Montserrat;
 }
 
+@media screen and (min-width: 780px) {
+.full-width-img {
+margin: auto;
+width: 90%;
+}
+
 .parent {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
