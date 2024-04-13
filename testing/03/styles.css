@@ -3,12 +3,6 @@
     font-family: Montserrat;
 }
 
-
-body {
-    padding-left: 5%;
-    padding-right: 5%;
-    
-}
 .header-menu {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -28,6 +22,8 @@ body {
     grid-column-gap: 3rem;
     grid-row-gap: 3rem;
     margin-top: 3rem;
+    margin-left: 5rem;
+    margin-right: 5rem;
 }
 
 .grid-item {
