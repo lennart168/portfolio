@@ -8,6 +8,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     </head>
 
@@ -20,8 +21,9 @@
         
             <div class="grid-item">
             
-                <video width="100%" controls controlsList="nofullscreen" poster="vakathumbnail.webp">
-                    <source src="https://cdn.fastmotion.io/a8bd8ded-a357-4c2d-b28c-ab6bc1aac0fa/playlist.m3u8" type="video/mp4">  
+                <video width="auto" height="auto" controls poster="vakathumbnail.webp" id="vakavideo1" class="video-js vjs-default-skin vjs-9-16" preload="auto" data-setup="{}">
+                    <source src="https://cdn.fastmotion.io/a8bd8ded-a357-4c2d-b28c-ab6bc1aac0fa/playlist.m3u8" type="video/mp4">
+                    <source src="vaka1.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 <h1>vaka.gmz</h1>
@@ -95,6 +97,7 @@
         
         </div>
     
+        <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     </body>
 
 </html>
