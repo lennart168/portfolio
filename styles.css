@@ -60,9 +60,7 @@ h5 {
   font-style: normal;
 }
 
-.vjs-default-skin.vjs-has-started .vjs-control-bar {
-visibility: hidden;
-}
+
 
 a:link { 
   text-decoration: none; 
@@ -96,6 +94,10 @@ a:active {
     outline: 10px solid #cacaca; border-radius: 1em;
     background-color: #cacaca;
     box-shadow: 10px 5px 5px grey;
+}
+
+.vjs-default-skin.vjs-has-started .vjs-control-bar {
+visibility: hidden;
 }
     **/
     
