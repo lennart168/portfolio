@@ -7,6 +7,30 @@ html {
     scroll-behavior: smooth;
 }
 
+.datumangabe {
+    display: flex;
+    grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr));
+    margin-left: 5px;
+}
+
+.datum-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.datum-text {
+    display: flex;
+    align-items: center;
+    justify-content: right;
+}
+.datum-text p {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: right;
+}
+
 .header-menu {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr));
@@ -40,8 +64,9 @@ img {
 h1 {
     font-family: Montserrat;
     text-align: left;
-    margin-top: 5px;
+    margin-top: 10px;
     margin-bottom: 5px;
+    margin-left: 5px;
 }
 
 h2 {
@@ -49,12 +74,21 @@ h2 {
     margin-top: 0;
     font-size: 20;
     font-weight: 300;
+    margin-left: 5px;
+    margin-bottom: 3px;
+
 }
 
 h5 {
     text-align: center;
     font-family: Montserrat;
     
+}
+p {
+    margin-left: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
 }
 
 .montserrat-<uniquifier> {
