@@ -77,9 +77,10 @@ a:active {
 
 
 input {
-    -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+    -webkit-user-select: text; /* Chrome, Opera, Safari */
+    -moz-user-select: text; /* Firefox 2+ */
+    -ms-user-select: text; /* IE 10+ */
+    user-select: text; /* Standard syntax */
 }
 
 .read-more-state {
