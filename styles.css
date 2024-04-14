@@ -76,7 +76,11 @@ a:active {
 }
 
 
-
+input {
+    -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+}
 
 .read-more-state {
   display: none;
