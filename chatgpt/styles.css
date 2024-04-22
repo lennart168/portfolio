@@ -264,3 +264,19 @@ body {
     height: 100%;
     object-fit: cover; /* Bei Bedarf Bild an Container anpassen */
 }
+
+.project-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.project-button:hover {
+    background-color: #555;
+}
