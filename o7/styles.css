@@ -1,0 +1,285 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+}
+
+/* Menü-Stile */
+.navbar {
+    background-color: #333;
+    overflow: hidden;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar ul li {
+    float: left;
+}
+
+.navbar ul li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.navbar ul li a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+/* Dropdown-Stile */
+.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #333;
+    min-width: 160px;
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: white;
+    padding: 12px 16px;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Stile für den Dropdown-Punkt */
+.dropbtn {
+    font-size: 16px;
+    border: none;
+    outline: none;
+    color: white;
+    padding: 14px 16px;
+    background-color: inherit;
+    font-family: inherit;
+    margin: 0;
+    cursor: pointer;
+}
+
+
+.portfolio-section {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.portfolio-item {
+    display: flex;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition on hover */
+}
+
+.project-image {
+    flex: 0 0 30%;
+}
+
+.project-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.project-details {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+}
+
+.project-details h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.project-details p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.project-info {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.project-info li {
+    font-size: 16px;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.info-icon {
+    margin-right: 5px;
+}
+
+.info-text {
+    display: inline-block;
+}
+
+.portfolio-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+@media screen and (max-width: 768px) {
+    .portfolio-item {
+        flex-direction: column;
+    }
+    
+    .project-image {
+        flex: 0 0 100%;
+    }
+    
+    .project-details {
+        flex: 1;
+        margin-top: 20px;
+    }
+    
+    .project-info {
+        flex-wrap: wrap;
+    }
+
+    .project-info li {
+        flex: 0 0 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Neue Seite spezifische Stile */
+.project-page {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.project-header img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.project-description {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.project-description h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.project-description p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.project-images {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.project-images img {
+    width: 30%;
+    border-radius: 10px;
+}
+
+.project-video {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.project-video iframe {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.social-media-bar {
+    background-color: #333;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.social-media-bar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.social-media-bar li {
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.social-media-bar a {
+    display: block;
+    width: 40px; /* Breite und Höhe der Icons */
+    height: 40px;
+    border-radius: 50%;
+    background-color: #fff;
+    transition: background-color 0.3s ease;
+    overflow: hidden; /* Runde Ecken */
+}
+
+.social-media-bar a:hover {
+    background-color: #ddd;
+}
+
+.social-media-bar img {
+    width: 100%; /* Icons füllen den Container aus */
+    height: 100%;
+    object-fit: cover; /* Bei Bedarf Bild an Container anpassen */
+}
+
+.project-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.project-button:hover {
+    background-color: #555;
+}
