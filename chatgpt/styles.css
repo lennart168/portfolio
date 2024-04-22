@@ -127,14 +127,12 @@ body {
     list-style: none;
     padding: 0;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: space-between;
 }
 
 .project-info li {
     font-size: 16px;
     color: #555;
-    margin-right: 20px;
     display: flex;
     align-items: center;
 }
@@ -166,7 +164,12 @@ body {
         margin-top: 20px;
     }
     
+    .project-info {
+        flex-wrap: wrap;
+    }
+
     .project-info li {
+        flex: 0 0 100%;
         margin-bottom: 10px;
     }
 }
