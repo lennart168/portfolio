@@ -67,6 +67,7 @@ jQuery(document).ready(function($) {
         loop: true,
         margin: 0,
         autoplay: false,
+        autoplaySpeed: 0;
         responsive:{
             800:{
                 items: 2,
