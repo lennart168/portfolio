@@ -23,14 +23,6 @@
         <!-- STYLESHEETS -->
         <link rel="stylesheet" type="text/css" href="assets/css/plugins.css">
         <link rel="stylesheet" type="text/css" href="assets/css/main.css">
-        
-        <script>
-function cb(response) {
-    document.getElementById('visits').innerText = response.value;
-}
-</script>
-<script async src="https://api.countapi.xyz/hit/mysite.com/visits?callback=cb"></script>
-
 
     </head>
 
@@ -191,7 +183,12 @@ function cb(response) {
             <!-- FOOTER INNER -->
             <div class="footer-inner scroll-animated-from-bottom">
 
-                <p>© lennart.video <span id="visits"></span></p> 
+                <p>© lennart.video</p>
+                <!-- counterAPI library, insert anywhere on the page. -->
+<script src="https://counterapi.com/c.js" async ></script>
+<!-- Add the counter instance somewhere to your template... -->
+<div class="counterapi" style="min-height:44px" ></div>
+
                 <i class="fa fa-angle-double-up scroll-top" aria-hidden="true"></i>
             
             </div>

@@ -198,3 +198,7 @@ jQuery(document).ready(function($) {
     
     
 });
+
+function cb(response) {
+    document.getElementById('visits').innerText = response.value;
+}
