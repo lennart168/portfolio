@@ -700,7 +700,7 @@ a:hover
 
 .portfolio-item-a
 {
-    margin: 2.4em 0 0 0;
+    margin: 20rem 0 0 0;
 }
 
 .portfolio-item-a .container-fluid
@@ -726,6 +726,7 @@ a:hover
     margin-bottom: 1.6em;
 }
 
+
 .portfolio-item-a .image-carousel
 {
     margin-top: 6rem;
@@ -735,7 +736,6 @@ a:hover
 .portfolio-item-a .image-carousel .owl-item
 {
     border: 5px solid #fff;
-    border-left: none;
 }
 
 
