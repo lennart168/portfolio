@@ -23,6 +23,13 @@
         <!-- STYLESHEETS -->
         <link rel="stylesheet" type="text/css" href="assets/css/plugins.css">
         <link rel="stylesheet" type="text/css" href="assets/css/main.css">
+        
+        <script>
+function cb(response) {
+    document.getElementById('visits').innerText = response.value;
+}
+</script>
+<script async src="https://api.countapi.xyz/hit/mysite.com/visits?callback=cb"></script>
 
 
     </head>
@@ -184,7 +191,7 @@
             <!-- FOOTER INNER -->
             <div class="footer-inner scroll-animated-from-bottom">
 
-                <p>© lennart.video</p><div class="website-counter"></div> 
+                <p>© lennart.video <span id="visits"></span></p> 
                 <i class="fa fa-angle-double-up scroll-top" aria-hidden="true"></i>
             
             </div>
