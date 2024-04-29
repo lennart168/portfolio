@@ -60,7 +60,7 @@ jQuery(document).ready(function($) {
     });
     
     
-    // IMAGE CAROUSEL
+    // IMAGE CAROUSEL pls
     $('.image-carousel').owlCarousel({
         center: true,
         items: 1,
