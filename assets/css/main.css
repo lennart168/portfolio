@@ -571,7 +571,7 @@ a:hover
             transform: translate(100%,-50%);
     text-align: center;
 
-    opacity: 0;
+    opacity: 1;
     color: #111;
     background: #fff;
 }
@@ -583,7 +583,12 @@ a:hover
             transform: translate(0,-50%);
 
     opacity: 1;
+    border-top-left-radius: 100px;
+    border-bottom-left-radius: 100px;
 }
+
+
+
 
 /** 7. FOOTER
 *******************************************************************/
@@ -649,6 +654,7 @@ a:hover
     padding: 0 30px;
 }
 
+
 .about h1
 {
     margin-bottom: .6em;
@@ -694,7 +700,7 @@ a:hover
 
 .portfolio-item-a
 {
-    margin: 20rem 0 0 0;
+    margin: 2.4em 0 0 0;
 }
 
 .portfolio-item-a .container-fluid
@@ -781,4 +787,25 @@ a:hover
 
 .vjs-tech {
   pointer-events: none;
+}
+
+/** Footer Socials 
+**************************************************************/
+
+
+.footer-socials
+{
+    margin: 1rem 0 2rem 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.footer-socials li
+{
+    font-size: 2.5rem;
+
+    display: inline-block;
+
+    margin-right: 1em;
 }
