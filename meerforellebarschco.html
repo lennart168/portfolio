@@ -12,7 +12,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
         <!-- PAGE TITLE -->
-        <title>lennart.video</title>
+        <title>lennart.video - MeerforelleBarsch & Co</title>
 
         <!-- FAVICON -->
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -27,6 +27,9 @@
         <link rel="stylesheet" type="text/css" href="assets/css/plugins.css">
         <link rel="stylesheet" type="text/css" href="assets/css/main.css">
         
+        <!-- VIDEO -->
+        <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+        
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-S026HQ2NK7"></script>
         <script>
@@ -37,10 +40,11 @@
           gtag('config', 'G-S026HQ2NK7');
         </script>
 
+
     </head>
 
 
-    <body class="contains-hero main-page">
+    <body class="sub-page">
     
        
         <!-- PRELOADER -->
@@ -50,9 +54,11 @@
             <!-- SPINNER -->
             <div class="spinner">
              
+             
               <div class="bounce-1"></div>
               <div class="bounce-2"></div>
               <div class="bounce-3"></div>
+              
               
             </div>
             <!-- /SPINNER -->
@@ -65,108 +71,47 @@
         <!-- NAVIGATION BUTTON -->
         <div class="navigation-button">
 
-            <a href="about.html"><p>Über mich</p></a>
+            <a href="index.html"><p>Projekte</p></a>
 
         </div>
         <!-- /NAVIGATION BUTTON -->
-
-
-        <!-- HERO -->
-        <div class="hero">
-
-
-            <!-- FRONT CONTENT -->
-            <div class="front-content">
-
-
-                <!-- CONTAINER MID -->
-                <div class="container-mid">
-                    
-                    
-                    <!-- ANIMATION CONTAINER -->
-                    <div class="animation-container animation-fade-right" data-animation-delay="0">
-                        
-                        <h1>Lennart</h1>
-                        
-                    </div>
-                    <!-- /ANIMATION CONTAINER -->
-                    
-                    
-                    <!-- ANIMATION CONTAINER -->
-                    <div class="animation-container animation-fade-left" data-animation-delay="200"> 
-                       
-                        <p class="subline">Hier findest du meine letzten Projekte.</p>
-                        
-                    </div>
-                    <!-- /ANIMATION CONTAINER -->
-                    
-
-                </div>
-                <!-- /CONTAINER MID -->
-
-
-            </div>
-            <!-- /FRONT CONTENT -->
-
-
-            <!-- BACKGROUND CONTENT -->
-            <div class="background-content parallax-on">
-                
-                
-                <!-- BACKGROUND CONTENT INNER -->
-                <div class="background-content-inner">
-
-                    <div class="background-overlay"></div>
-                    <div class="background-img layer" data-depth="0.05"></div>
-                
-                </div>
-                <!-- /BACKGROUND CONTENT INNER -->
-                
-                
-            </div>
-            <!-- /BACKGROUND CONTENT -->
-
-
-        </div>
-        <!-- /HERO -->
         
         
-        <!-- PORTFOLIO -->
-        <div class="portfolio">
+        <!-- PORTFOLIO ITEM TYPE A -->
+        <div class="portfolio-item-a">
             
             
-            <!-- ITEM -->
-            <a class="item scroll-animated-from-bottom" href="videoportrait.html">
+            <!-- CONTAINER FLUID -->
+            <div class="container-fluid">
+
                
-                <i class="fa fa-eye" aria-hidden="true"></i>
-                <div class="item-cover" style="background-image: url(assets/img/portfolio/cover-1.webp)"></div>
+                <h1 class="scroll-animated-from-bottom">Meerforelle Barsch&Co</h1>
                 
-            </a>
-            <!-- /ITEM -->
-            
-            
-            <!-- ITEM -->
-            <a class="item scroll-animated-from-bottom" href="meerforellebarschco.html">
-               
-                <i class="fa fa-eye" aria-hidden="true"></i>
-                <div class="item-cover" style="background-image: url(assets/img/portfolio/cover-3.webp)"></div>
+                <h4 class="scroll-animated-from-bottom">Videoschnitt für Angelvideos (Social Media)</h4>
                 
-            </a>
-            <!-- /ITEM -->
-            
-            
-            <!-- ITEM -->
-            <a class="item scroll-animated-from-bottom" href="#">
-               
-                <i class="fa fa-eye" aria-hidden="true"></i>
-                <div class="item-cover" style="background-image: url(assets/img/portfolio/cover-2.webp)"></div>
+                <p class="scroll-animated-from-bottom">Mit Dennis vom Kanal Meerforelle Barsch & Co arbeite ich bereits seit August 2023 zusammen. Aus Stundenlangem Footage schneide ich die Highlights für seinen <a href="https://www.youtube.com/@meerforellebarschco2013">YouTube Kanal</a> zusammen um dort den Angelbegeisterten Zuschauern das Beste vom aktuellen Angeltrip zu präsentieren.</p>
                 
-            </a>
-            <!-- /ITEM -->
+            
+            </div>
+            <!-- CONTAINER FLUID -->
             
             
+            <!-- IMAGE CAROUSEL -->
+            <div class="image-carousel owl-carousel scroll-animated-from-bottom">
+                
+                <img class="img-responsive" src="assets/img/page-portfolio-item-1/mebaco1.jpg" alt="image">
+                <img class="img-responsive" src="assets/img/page-portfolio-item-1/mebaco2.jpg" alt="image">
+                
+
+            </div>
+            
+            <!-- IMAGE CAROUSEL -->
+            
+            
+            
+
         </div>
-        <!-- /PORTFOLIO -->
+        <!-- /PORTFOLIO ITEM TYPE A -->
         
         
         <!-- FOOTER -->
@@ -192,7 +137,6 @@ style="fill:#1A1A1A;">
 </svg></a></li>
                     
                 </ul>
-
             
             </div>
             <!-- /FOOTER INNER -->
@@ -205,8 +149,7 @@ style="fill:#1A1A1A;">
         <!-- JAVASCRIPTS -->
         <script type="text/javascript" src="assets/js/plugins.js"></script>
         <script type="text/javascript" src="assets/js/main.js"></script>
-        <script src="https://counterapi.com/c.js?ns=lennart.video" async ></script>
-
+        <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 
 
     </body> 
