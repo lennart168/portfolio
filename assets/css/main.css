@@ -730,12 +730,28 @@ a:hover
 .portfolio-item-a .image-carousel
 {
     margin-top: 6rem;
+    
 }
 
 
 .portfolio-item-a .image-carousel .owl-item
 {
     border: 5px solid #fff;
+}
+
+
+.video-js.vjs-fluid,
+.video-js.vjs-9-16,
+.video-js.vjs-4-3,
+video.video-js,
+video.vjs-tech {
+    max-height: 720px;
+    position: relative !important;
+    width: 100%;
+    height: auto !important;
+    max-width: 100% !important;
+    padding-top: 0 !important;
+    line-height: 0;
 }
 
 /** 10. Page --> Portfolio Item Type B
