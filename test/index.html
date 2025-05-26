@@ -256,8 +256,9 @@
         .portfolio-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
+            gap: 2.5rem;
             margin-bottom: 3rem;
+            padding: 0 1rem;
         }
 
         .portfolio-item {
@@ -265,28 +266,22 @@
             border: 1px solid var(--border);
             border-radius: 20px;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(20px);
             position: relative;
-            group: hover;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         .portfolio-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
             border-color: var(--border-hover);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .portfolio-item:hover {
-                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-            }
         }
 
         .video-container {
             position: relative;
             width: 100%;
-            height: 250px;
+            height: 280px;
             background: var(--primary-color);
             overflow: hidden;
         }
@@ -299,6 +294,11 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .portfolio-item:hover .video-placeholder {
+            transform: scale(1.05);
         }
 
         .play-button {
@@ -327,37 +327,45 @@
         }
 
         .portfolio-info {
-            padding: 1.5rem;
+            padding: 2rem;
         }
 
         .portfolio-title {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             color: var(--text-primary);
+            line-height: 1.3;
         }
 
         .portfolio-description {
             color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 1rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
         }
 
         .portfolio-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         .tag {
             background: var(--surface-hover);
             color: var(--text-secondary);
-            padding: 0.3rem 0.8rem;
+            padding: 0.4rem 1rem;
             border-radius: 12px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 500;
             border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background: var(--accent-color);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
         }
 
         .social-links {
@@ -564,20 +572,26 @@
         .scroll-indicator {
             position: absolute;
             bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
+            right: 0;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 0.75rem;
             color: var(--text-secondary);
             cursor: pointer;
             animation: fadeInUp 1s ease-out 1s both;
+            text-align: center;
+            z-index: 10;
+            width: fit-content;
         }
 
         .scroll-indicator span {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 500;
+            white-space: nowrap;
         }
 
         .scroll-arrow {
@@ -598,7 +612,6 @@
             }
         }
 
-        /* Mobile optimizations */
         @media (max-width: 768px) {
             .social-links {
                 flex-direction: column;
@@ -622,7 +635,16 @@
 
             .portfolio-grid {
                 grid-template-columns: 1fr;
-                gap: 1.5rem;
+                gap: 2rem;
+                padding: 0 0.5rem;
+            }
+
+            .video-container {
+                height: 240px;
+            }
+
+            .portfolio-info {
+                padding: 1.5rem;
             }
 
             .logo {
@@ -632,6 +654,14 @@
             
             .logo img {
                 border-radius: 22px;
+            }
+
+            .scroll-indicator {
+                bottom: 1.5rem;
+            }
+            
+            .scroll-indicator span {
+                font-size: 0.9rem;
             }
         }
 
@@ -726,8 +756,8 @@
             <div class="portfolio-grid">
                 <div class="portfolio-item">
                     <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/VakaVlog1.jpeg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/6ie_rfmr9rg?si=SBbPm7gS4ZRhGXwz')">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
@@ -735,20 +765,21 @@
                         </div>
                     </div>
                     <div class="portfolio-info">
-                        <h3 class="portfolio-title">Social Media Campaign</h3>
-                        <p class="portfolio-description">Serie von Instagram Reels und TikTok Videos mit trendigem Editing und Musik-Synchronisation.</p>
+                        <h3 class="portfolio-title">Vaka Vlogs</h3>
+                        <p class="portfolio-description">Vaka ist Unternehmer aus Köln und hat zusammen mit 2 seiner Freunde seine eigene Parfümmarke. In dem Video geht es um den Aufbau der Marke und seine Erfahrungen.</p>
                         <div class="portfolio-tags">
                             <span class="tag">Social Media</span>
-                            <span class="tag">Vertical Video</span>
-                            <span class="tag">Music Sync</span>
+                            <span class="tag">16:9 Video</span>
+                            <span class="tag">Vlog</span>
+                            <span class="tag">Low Budget</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="portfolio-item">
                     <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/gav.jpeg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/M7xKaslZA0A?si=L7eO5fepL2K6wWzE')">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
@@ -756,20 +787,21 @@
                         </div>
                     </div>
                     <div class="portfolio-info">
-                        <h3 class="portfolio-title">Event Aftermovie</h3>
-                        <p class="portfolio-description">Emotionaler Rückblick auf eine Firmenveranstaltung mit cineastischen Aufnahmen und Storytelling.</p>
+                        <h3 class="portfolio-title">Studium Grundlagen Audio/Video Semsterabgabe</h3>
+                        <p class="portfolio-description">Am Anfang meines Studium habe ich eine Semesterabgabe für mein Grundlagen Audio/Video Modul gemacht. Das Video ist ein Videoportrait von mir und einem Freund.</p>
                         <div class="portfolio-tags">
-                            <span class="tag">Event</span>
+                            <span class="tag">Studium</span>
                             <span class="tag">Storytelling</span>
                             <span class="tag">Cinematography</span>
+                            <span class="tag">Color Grading</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="portfolio-item">
                     <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/product-showcase.jpg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/YOUR_VIDEO_ID_3')">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
@@ -778,19 +810,20 @@
                     </div>
                     <div class="portfolio-info">
                         <h3 class="portfolio-title">Produkt Showcase</h3>
-                        <p class="portfolio-description">Elegante Produktpräsentation mit Macro-Aufnahmen und professioneller Lichtsetzung.</p>
+                        <p class="portfolio-description">Elegante Produktpräsentation mit Macro-Aufnahmen und professioneller Lichtsetzung. Perfekt für E-Commerce und Social Media Marketing.</p>
                         <div class="portfolio-tags">
                             <span class="tag">Product Video</span>
                             <span class="tag">Macro</span>
                             <span class="tag">Studio Lighting</span>
+                            <span class="tag">E-Commerce</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="portfolio-item">
                     <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/music-video.jpg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/YOUR_VIDEO_ID_4')">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
@@ -799,19 +832,20 @@
                     </div>
                     <div class="portfolio-info">
                         <h3 class="portfolio-title">Music Video</h3>
-                        <p class="portfolio-description">Kreatives Musikvideo für einen lokalen Künstler mit experimentellen Effekten und Farbschemata.</p>
+                        <p class="portfolio-description">Kreatives Musikvideo mit experimentellen Effekten, visuellen Metaphern und einem einzigartigen Farbschema. Perfekt für Künstler, die aus der Masse herausstechen wollen.</p>
                         <div class="portfolio-tags">
                             <span class="tag">Music Video</span>
                             <span class="tag">Creative Effects</span>
                             <span class="tag">Art Direction</span>
+                            <span class="tag">Visual Effects</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="portfolio-item">
                     <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/tutorial.jpg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/YOUR_VIDEO_ID_5')">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
@@ -820,11 +854,34 @@
                     </div>
                     <div class="portfolio-info">
                         <h3 class="portfolio-title">Tutorial Serie</h3>
-                        <p class="portfolio-description">Lehrreiche Video-Serie mit klaren Animationen und strukturiertem Aufbau für maximale Verständlichkeit.</p>
+                        <p class="portfolio-description">Eine umfassende Tutorial-Serie mit klaren Animationen, Screen Recordings und professionellen Erklärungen. Ideal für Bildungsinhalte und Produkt-Tutorials.</p>
                         <div class="portfolio-tags">
                             <span class="tag">Educational</span>
                             <span class="tag">Animation</span>
                             <span class="tag">Screen Recording</span>
+                            <span class="tag">Motion Graphics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="portfolio-item">
+                    <div class="video-container">
+                        <div class="video-placeholder" style="background-image: url('assets/thumbnails/commercial.jpg'); background-size: cover; background-position: center;">
+                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/YOUR_VIDEO_ID_6')">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3 class="portfolio-title">Brand Commercial</h3>
+                        <p class="portfolio-description">Ein moderner Werbespot mit dynamischen Übergängen, Motion Graphics und professionellem Color Grading. Perfekt für Tech-Startups und innovative Marken.</p>
+                        <div class="portfolio-tags">
+                            <span class="tag">Commercial</span>
+                            <span class="tag">Motion Graphics</span>
+                            <span class="tag">Color Grading</span>
+                            <span class="tag">Branding</span>
                         </div>
                     </div>
                 </div>
@@ -1062,25 +1119,4 @@
         });
     </script>
 </body>
-</html>Box="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3 class="portfolio-title">Brand Commercial</h3>
-                        <p class="portfolio-description">Moderner Werbespot für ein Tech-Startup mit dynamischen Übergängen und Motion Graphics.</p>
-                        <div class="portfolio-tags">
-                            <span class="tag">Commercial</span>
-                            <span class="tag">Motion Graphics</span>
-                            <span class="tag">Color Grading</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="portfolio-item">
-                    <div class="video-container">
-                        <div class="video-placeholder">
-                            <div class="play-button" onclick="openVideoModal('https://www.youtube.com/embed/dQw4w9WgXcQ')">
-                                <svg view
+</html>
