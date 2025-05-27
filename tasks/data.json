@@ -13,8 +13,8 @@
     "client": "hallo",
     "videos": 6,
     "deadline": "2025-05-30",
-    "done": true,
+    "done": false,
     "createdAt": "2025-05-27T21:13:39.828Z",
-    "updatedAt": "2025-05-27T21:20:05.537Z"
+    "updatedAt": "2025-05-27T21:20:09.485Z"
   }
 ]
