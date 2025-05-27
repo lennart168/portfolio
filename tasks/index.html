@@ -469,16 +469,20 @@
     </div>
   </div>
 
-  <!-- Konfiguration -->
+  <!-- Konfiguration für GitHub Actions -->
   <script>
-    // Konfiguration für GitHub Actions
     window.GITHUB_CONFIG = {
-        // Repository-Name ohne Owner (wird automatisch ergänzt)
-        repo: "portfolio",
-        // Owner des Repositories
-        owner: "lennart168",
-        // Token für die GitHub API (nur für repository_dispatch)
-        token: "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"  // TODO: Ersetzen Sie dies mit Ihrem neuen Token
+      // Repository-Name ohne Owner (wird automatisch ergänzt)
+      repo: "portfolio",
+      // Owner des Repositories
+      owner: "lennart168",
+      // Token wird aus dem localStorage geladen
+      get token() {
+        return localStorage.getItem('github_token');
+      },
+      set token(value) {
+        localStorage.setItem('github_token', value);
+      }
     };
   </script>
   
@@ -683,100 +687,46 @@
       }
     }
 
-    // Test-Funktion für GitHub-Zugriff
-    async function testGitHubAccess() {
-      try {
-        console.log('Teste GitHub-Zugriff...');
-        const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
-        console.log('Repository:', repoPath);
-        
-        // Teste Repository-Zugriff
-        const response = await fetch(
-          `https://api.github.com/repos/${repoPath}`,
-          {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'User-Agent': 'Video-Tasks-Manager'
-            }
-          }
-        );
-
-        console.log('Repository Test Status:', response.status);
-        const responseText = await response.text();
-        console.log('Repository Test Response:', responseText);
-
-        if (!response.ok) {
-          throw new Error(`Repository nicht gefunden (${response.status}): ${responseText}`);
-        }
-
-        // Teste tasks-Ordner-Zugriff
-        const tasksResponse = await fetch(
-          `https://api.github.com/repos/${repoPath}/contents/tasks`,
-          {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'User-Agent': 'Video-Tasks-Manager'
-            }
-          }
-        );
-
-        console.log('Tasks-Ordner Test Status:', tasksResponse.status);
-        const tasksResponseText = await tasksResponse.text();
-        console.log('Tasks-Ordner Test Response:', tasksResponseText);
-
-        if (!tasksResponse.ok && tasksResponse.status !== 404) {
-          throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
-        }
-
-        return {
-          repositoryAccess: response.ok,
-          tasksFolderExists: tasksResponse.ok
-        };
-      } catch (error) {
-        console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
-        throw error;
+    // Funktion zum Speichern des Tokens
+    function saveGitHubConfig() {
+      const token = document.getElementById('githubToken').value.trim();
+      if (!token) {
+        alert('Bitte geben Sie einen Token ein');
+        return;
       }
+      
+      GITHUB_CONFIG.token = token;
+      document.getElementById('githubConfig').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+      
+      // Teste den Token
+      testGitHubAccess().then(() => {
+        updateSyncStatus('success', 'Token gespeichert');
+        // Lade die Daten neu
+        syncTasks();
+      }).catch(error => {
+        updateSyncStatus('error', `Token ungültig: ${error.message}`);
+        // Zeige den Konfigurationsdialog wieder an
+        document.getElementById('githubConfig').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+      });
     }
 
-    async function getFileContent() {
-      try {
-        console.log('Lade Daten von GitHub...');
-        const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
-          {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'Authorization': `token ${GITHUB_CONFIG.token}`,
-              'User-Agent': 'Video-Tasks-Manager'
-            }
-          }
-        );
-
-        if (response.status === 404) {
-          console.log('Datei existiert noch nicht');
-          return null;
-        }
-
-        if (!response.ok) {
-          throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        console.log('Daten erfolgreich geladen, SHA:', data.sha);
-        return {
-          content: JSON.parse(atob(data.content)),
-          sha: data.sha
-        };
-      } catch (error) {
-        console.error('Fehler beim Laden:', error);
-        updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
-        return null;
+    // Zeige den Konfigurationsdialog, wenn kein Token vorhanden ist
+    function checkGitHubConfig() {
+      if (!GITHUB_CONFIG.token) {
+        document.getElementById('githubConfig').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+        return false;
       }
+      return true;
     }
 
+    // Modifiziere die updateFileContent Funktion
     async function updateFileContent(content, sha) {
+      if (!checkGitHubConfig()) {
+        throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+      }
       try {
         console.log('Aktualisiere Daten auf GitHub...');
         const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
@@ -830,6 +780,106 @@
         console.error('Fehler beim Aktualisieren:', error);
         updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
         return false;
+      }
+    }
+
+    // Modifiziere die getFileContent Funktion
+    async function getFileContent() {
+      if (!checkGitHubConfig()) {
+        throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+      }
+      try {
+        console.log('Lade Daten von GitHub...');
+        const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+        
+        const response = await fetch(
+          `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `token ${GITHUB_CONFIG.token}`,
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        if (response.status === 404) {
+          console.log('Datei existiert noch nicht');
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        console.log('Daten erfolgreich geladen, SHA:', data.sha);
+        return {
+          content: JSON.parse(atob(data.content)),
+          sha: data.sha
+        };
+      } catch (error) {
+        console.error('Fehler beim Laden:', error);
+        updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
+        return null;
+      }
+    }
+
+    // Modifiziere die testGitHubAccess Funktion
+    async function testGitHubAccess() {
+      if (!checkGitHubConfig()) {
+        throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+      }
+      try {
+        console.log('Teste GitHub-Zugriff...');
+        const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+        console.log('Repository:', repoPath);
+        
+        // Teste Repository-Zugriff
+        const response = await fetch(
+          `https://api.github.com/repos/${repoPath}`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        console.log('Repository Test Status:', response.status);
+        const responseText = await response.text();
+        console.log('Repository Test Response:', responseText);
+
+        if (!response.ok) {
+          throw new Error(`Repository nicht gefunden (${response.status}): ${responseText}`);
+        }
+
+        // Teste tasks-Ordner-Zugriff
+        const tasksResponse = await fetch(
+          `https://api.github.com/repos/${repoPath}/contents/tasks`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        console.log('Tasks-Ordner Test Status:', tasksResponse.status);
+        const tasksResponseText = await tasksResponse.text();
+        console.log('Tasks-Ordner Test Response:', tasksResponseText);
+
+        if (!tasksResponse.ok && tasksResponse.status !== 404) {
+          throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
+        }
+
+        return {
+          repositoryAccess: response.ok,
+          tasksFolderExists: tasksResponse.ok
+        };
+      } catch (error) {
+        console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
+        throw error;
       }
     }
 
@@ -911,6 +961,13 @@
       const icon = document.querySelector('.theme-toggle i');
       icon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
 
+      // Prüfe, ob ein Token vorhanden ist
+      if (!GITHUB_CONFIG.token) {
+        document.getElementById('githubConfig').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+        return;
+      }
+
       try {
         // Teste GitHub-Zugriff beim Start
         await testGitHubAccess();
@@ -924,6 +981,9 @@
       } catch (error) {
         console.error('Initialisierungsfehler:', error);
         updateSyncStatus('error', `Initialisierungsfehler: ${error.message}`);
+        // Zeige den Konfigurationsdialog an
+        document.getElementById('githubConfig').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
       }
     });
   </script>
