@@ -1384,7 +1384,154 @@
         // Starte die Initialisierung
         await initializeApp();
 
-        // ... rest of the existing event listeners and functions ...
+        // Event-Listener für Filter-Buttons
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Entferne active-Klasse von allen Buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Füge active-Klasse zum geklickten Button hinzu
+                button.classList.add('active');
+                
+                // Aktualisiere den aktuellen Filter
+                currentFilter = button.dataset.filter;
+                
+                // Rendere die Tasks neu
+                renderTasks();
+            });
+        });
+
+        // Event-Listener für das Formular
+        taskForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            if (!GITHUB_CONFIG.token) {
+                alert('Bitte konfigurieren Sie zuerst den GitHub Token');
+                showGitHubConfig(true);
+                return;
+            }
+
+            const client = document.getElementById('client').value.trim();
+            const videos = parseInt(document.getElementById('videos').value);
+            const deadline = document.getElementById('deadline').value;
+
+            if (!client || !videos || !deadline) {
+                alert('Bitte füllen Sie alle Felder aus');
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                client,
+                videos,
+                deadline,
+                done: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            tasks.push(newTask);
+            await saveTasks();
+            renderTasks();
+
+            // Formular zurücksetzen
+            taskForm.reset();
+            document.getElementById('client').focus();
+        });
+
+        // Event-Listener für Theme-Toggle
+        document.querySelector('.theme-toggle').addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                themeIcon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+            }
+        });
+
+        // Event-Listener für GitHub Token Speichern
+        document.getElementById('saveTokenButton').addEventListener('click', async () => {
+            const token = document.getElementById('githubToken').value.trim();
+            if (!token) {
+                updateTokenStatus('Bitte geben Sie einen Token ein', false);
+                return;
+            }
+
+            try {
+                GITHUB_CONFIG.token = token;
+                const access = await testGitHubAccess();
+                if (access.repositoryAccess) {
+                    updateTokenStatus('Token gültig', true);
+                    updateFormStatus();
+                    showGitHubConfig(false);
+                    await syncTasks();
+                } else {
+                    throw new Error('Keine Zugriffsrechte auf das Repository');
+                }
+            } catch (error) {
+                console.error('Token-Test fehlgeschlagen:', error);
+                updateTokenStatus(error.message, false);
+                GITHUB_CONFIG.token = null;
+            }
+        });
+
+        // Event-Listener für GitHub Konfiguration öffnen/schließen
+        document.getElementById('configButton').addEventListener('click', () => {
+            showGitHubConfig(true);
+        });
+
+        document.getElementById('overlay').addEventListener('click', () => {
+            showGitHubConfig(false);
+        });
+
+        // Event-Listener für Client-Vorschläge
+        document.getElementById('client').addEventListener('input', (event) => {
+            const input = event.target.value.trim().toLowerCase();
+            const suggestions = document.getElementById('clientSuggestions');
+            
+            if (!input) {
+                suggestions.innerHTML = '';
+                return;
+            }
+
+            const uniqueClients = [...new Set(tasks.map(task => task.client))];
+            const matches = uniqueClients.filter(client => 
+                client.toLowerCase().includes(input)
+            );
+
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches
+                    .map(client => `<div class="suggestion">${client}</div>`)
+                    .join('');
+                
+                suggestions.querySelectorAll('.suggestion').forEach(suggestion => {
+                    suggestion.addEventListener('click', () => {
+                        document.getElementById('client').value = suggestion.textContent;
+                        suggestions.innerHTML = '';
+                    });
+                });
+            } else {
+                suggestions.innerHTML = '';
+            }
+        });
+
+        // Schließe Vorschläge beim Klick außerhalb
+        document.addEventListener('click', (event) => {
+            const suggestions = document.getElementById('clientSuggestions');
+            const clientInput = document.getElementById('client');
+            
+            if (!clientInput.contains(event.target) && !suggestions.contains(event.target)) {
+                suggestions.innerHTML = '';
+            }
+        });
+
+        // Initialisiere das Formular
+        updateFormStatus();
     });
   </script>
 </body>
