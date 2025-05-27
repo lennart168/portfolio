@@ -733,16 +733,7 @@
     async function updateFileContent(content, sha) {
       const config = window.GITHUB_CONFIG;
       try {
-        // Stelle sicher, dass der tasks-Ordner existiert
-        const folderCreated = await createTasksFolder();
-        if (!folderCreated) {
-          throw new Error('Konnte tasks-Ordner nicht erstellen');
-        }
-
-        // Warte kurz, damit GitHub die Änderungen verarbeiten kann
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Jetzt die data.json erstellen/aktualisieren
+        // Direkt versuchen, die data.json zu erstellen/aktualisieren
         console.log('Versuche data.json zu erstellen/aktualisieren...');
         console.log('Repository:', config.repo);
         console.log('Token vorhanden:', !!config.token);
@@ -844,6 +835,10 @@
         
         if (!existingData) {
           console.log('Erstelle neue Datei mit', tasks.length, 'Tasks');
+          // Stelle sicher, dass wir ein leeres Array haben, wenn keine Tasks vorhanden sind
+          if (!Array.isArray(tasks)) {
+            tasks = [];
+          }
           const success = await updateFileContent(tasks, null);
           if (success) {
             updateSyncStatus('success', 'Synchronisiert');
@@ -855,17 +850,20 @@
           console.log('Remote Tasks:', remoteTasks.length);
           console.log('Lokale Tasks:', tasks.length);
           
-          const mergedTasks = [...remoteTasks];
+          // Stelle sicher, dass remoteTasks ein Array ist
+          const mergedTasks = Array.isArray(remoteTasks) ? [...remoteTasks] : [];
           
           // Füge neue lokale Tasks hinzu
-          tasks.forEach(localTask => {
-            const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
-            if (existingIndex === -1) {
-              mergedTasks.push(localTask);
-            } else if (localTask.updatedAt > mergedTasks[existingIndex].updatedAt) {
-              mergedTasks[existingIndex] = localTask;
-            }
-          });
+          if (Array.isArray(tasks)) {
+            tasks.forEach(localTask => {
+              const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
+              if (existingIndex === -1) {
+                mergedTasks.push(localTask);
+              } else if (localTask.updatedAt > mergedTasks[existingIndex].updatedAt) {
+                mergedTasks[existingIndex] = localTask;
+              }
+            });
+          }
 
           tasks = mergedTasks;
           console.log('Nach Merge:', tasks.length, 'Tasks');
