@@ -474,6 +474,27 @@
     let currentFilter = 'all';
     let syncInProgress = false;
     const GITHUB_CONFIG_KEY = 'githubConfig';
+    const GITHUB_CONFIG = {
+      token: "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",
+      repo: "lennart168/portfolio"
+    };
+
+    // Initialisiere die Konfiguration
+    if (!localStorage.getItem(GITHUB_CONFIG_KEY)) {
+      localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(GITHUB_CONFIG));
+    }
+
+    // Entferne den Konfigurationsdialog und Overlay aus dem DOM
+    document.getElementById('overlay')?.remove();
+    document.getElementById('githubConfig')?.remove();
+
+    // Entferne die Tastenkombination
+    document.removeEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+        e.preventDefault();
+        showGitHubConfig();
+      }
+    });
 
     // Funktion zum Aktualisieren der Kundenliste
     function updateClientList() {
@@ -695,14 +716,9 @@
       syncTasks();
     }
 
-    // GitHub API Funktionen
+    // Modifiziere die GitHub API Funktionen
     async function getFileContent() {
-      const config = JSON.parse(localStorage.getItem(GITHUB_CONFIG_KEY) || '{}');
-      if (!config.token || !config.repo) {
-        showGitHubConfig();
-        return null;
-      }
-
+      const config = GITHUB_CONFIG; // Verwende die feste Konfiguration
       try {
         const response = await fetch(
           `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
@@ -715,7 +731,7 @@
         );
 
         if (response.status === 404) {
-          return null; // Datei existiert noch nicht
+          return null;
         }
 
         if (!response.ok) {
@@ -735,12 +751,7 @@
     }
 
     async function updateFileContent(content, sha) {
-      const config = JSON.parse(localStorage.getItem(GITHUB_CONFIG_KEY) || '{}');
-      if (!config.token || !config.repo) {
-        showGitHubConfig();
-        return false;
-      }
-
+      const config = GITHUB_CONFIG; // Verwende die feste Konfiguration
       try {
         // Prüfe zuerst, ob der tasks-Ordner existiert
         const tasksFolderResponse = await fetch(
@@ -859,14 +870,6 @@
         <span>${message}</span>
       `;
     }
-
-    // Event Listener für GitHub Konfiguration
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'G') {
-        e.preventDefault();
-        showGitHubConfig();
-      }
-    });
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
