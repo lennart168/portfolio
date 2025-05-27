@@ -34,5 +34,14 @@
     "done": false,
     "createdAt": "2025-05-27T21:35:53.559Z",
     "updatedAt": "2025-05-27T21:35:53.559Z"
+  },
+  {
+    "id": 1748381867832,
+    "client": "Mirage",
+    "videos": 30,
+    "deadline": "2025-05-31",
+    "done": false,
+    "createdAt": "2025-05-27T21:37:47.832Z",
+    "updatedAt": "2025-05-27T21:37:47.832Z"
   }
 ]
