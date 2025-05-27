@@ -592,6 +592,8 @@
       const saveButton = document.getElementById('saveTokenButton');
       const configButton = document.getElementById('configButton');
       const taskForm = document.getElementById('taskForm');
+      const tokenStatus = document.getElementById('tokenStatus');
+      const tokenError = document.getElementById('tokenError');
       
       console.log('DOM-Elemente gefunden:', {
         configDialog: !!configDialog,
@@ -599,12 +601,63 @@
         tokenInput: !!tokenInput,
         saveButton: !!saveButton,
         configButton: !!configButton,
-        taskForm: !!taskForm
+        taskForm: !!taskForm,
+        tokenStatus: !!tokenStatus,
+        tokenError: !!tokenError
       });
+
+      // Funktion zum Aktualisieren des Token-Status
+      function updateTokenStatus(message, isValid = null) {
+        if (!tokenStatus || !tokenError) return;
+        
+        tokenStatus.textContent = message;
+        tokenStatus.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
+        
+        tokenError.textContent = isValid === false ? message : '';
+        tokenError.className = 'error-message' + (isValid === false ? ' active' : '');
+      }
+
+      // Funktion zum Aktualisieren des Sync-Status
+      function updateSyncStatus(status, message) {
+        const syncStatus = document.getElementById('syncStatus');
+        if (!syncStatus) return;
+        
+        syncStatus.className = `sync-status ${status}`;
+        syncStatus.innerHTML = `
+          <i class="fas fa-${status === 'syncing' ? 'sync fa-spin' : 
+                          status === 'error' ? 'exclamation-circle' : 
+                          'check-circle'}"></i>
+          <span>${message}</span>
+        `;
+      }
 
       // Event-Listener für den Save-Button
       if (saveButton) {
-        saveButton.addEventListener('click', saveGitHubConfig);
+        saveButton.addEventListener('click', function() {
+          if (!tokenInput) return;
+
+          const token = tokenInput.value.trim();
+          if (!token) {
+            updateTokenStatus('Bitte geben Sie einen Token ein', false);
+            return;
+          }
+
+          updateTokenStatus('Teste Token...');
+          GITHUB_CONFIG.token = token;
+
+          testGitHubAccess()
+            .then(() => {
+              updateTokenStatus('Token gültig', true);
+              showGitHubConfig(false);
+              updateFormStatus();
+              updateSyncStatus('success', 'Token gespeichert');
+              syncTasks();
+            })
+            .catch(error => {
+              updateTokenStatus('Token ungültig', false);
+              updateSyncStatus('error', `Token ungültig: ${error.message}`);
+            });
+        });
       }
 
       // Event-Listener für Enter-Taste im Token-Input
@@ -725,7 +778,8 @@
 
       // Mache Funktionen global verfügbar
       window.showGitHubConfig = showGitHubConfig;
-      window.saveGitHubConfig = saveGitHubConfig;
+      window.updateTokenStatus = updateTokenStatus;
+      window.updateSyncStatus = updateSyncStatus;
       window.updateFormStatus = updateFormStatus;
     });
   </script>
