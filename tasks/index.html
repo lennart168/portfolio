@@ -680,6 +680,65 @@
       });
 
       // GitHub API Funktionen
+      async function testGitHubAccess() {
+        if (!GITHUB_CONFIG.token) {
+          throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+        }
+        try {
+          console.log('Teste GitHub-Zugriff...');
+          const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+          console.log('Repository:', repoPath);
+          
+          // Teste Repository-Zugriff
+          const response = await fetch(
+            `https://api.github.com/repos/${repoPath}`,
+            {
+              headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'User-Agent': 'Video-Tasks-Manager'
+              }
+            }
+          );
+
+          console.log('Repository Test Status:', response.status);
+          const responseText = await response.text();
+          console.log('Repository Test Response:', responseText);
+
+          if (!response.ok) {
+            throw new Error(`Repository nicht gefunden (${response.status}): ${responseText}`);
+          }
+
+          // Teste tasks-Ordner-Zugriff
+          const tasksResponse = await fetch(
+            `https://api.github.com/repos/${repoPath}/contents/tasks`,
+            {
+              headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'User-Agent': 'Video-Tasks-Manager'
+              }
+            }
+          );
+
+          console.log('Tasks-Ordner Test Status:', tasksResponse.status);
+          const tasksResponseText = await tasksResponse.text();
+          console.log('Tasks-Ordner Test Response:', tasksResponseText);
+
+          if (!tasksResponse.ok && tasksResponse.status !== 404) {
+            throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
+          }
+
+          return {
+            repositoryAccess: response.ok,
+            tasksFolderExists: tasksResponse.ok
+          };
+        } catch (error) {
+          console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
+          throw error;
+        }
+      }
+
       async function getFileContent() {
         if (!GITHUB_CONFIG.token) {
           throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
