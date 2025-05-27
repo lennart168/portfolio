@@ -742,10 +742,45 @@
       }
 
       try {
+        // Prüfe zuerst, ob der tasks-Ordner existiert
+        const tasksFolderResponse = await fetch(
+          `https://api.github.com/repos/${config.repo}/contents/tasks`,
+          {
+            headers: {
+              'Authorization': `token ${config.token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        );
+
+        // Wenn der Ordner nicht existiert, erstelle ihn
+        if (tasksFolderResponse.status === 404) {
+          const createFolderResponse = await fetch(
+            `https://api.github.com/repos/${config.repo}/contents/tasks/.gitkeep`,
+            {
+              method: 'PUT',
+              headers: {
+                'Authorization': `token ${config.token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                message: 'Create tasks folder',
+                content: btoa('')
+              })
+            }
+          );
+
+          if (!createFolderResponse.ok) {
+            throw new Error(`Konnte tasks-Ordner nicht erstellen: ${createFolderResponse.statusText}`);
+          }
+        }
+
+        // Jetzt die data.json erstellen/aktualisieren
         const response = await fetch(
           `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
           {
-            method: sha ? 'PUT' : 'POST',
+            method: 'PUT', // Immer PUT verwenden, da wir die Datei erstellen oder aktualisieren
             headers: {
               'Authorization': `token ${config.token}`,
               'Accept': 'application/vnd.github.v3+json',
@@ -754,7 +789,7 @@
             body: JSON.stringify({
               message: 'Update tasks',
               content: btoa(JSON.stringify(content, null, 2)),
-              sha: sha
+              sha: sha || null // sha nur setzen, wenn die Datei existiert
             })
           }
         );
