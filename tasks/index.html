@@ -7,29 +7,36 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
+      --primary-color: #18181b;
+      --secondary-color: #27272a;
+      --accent-color: #71717a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --background: #09090b;
+      --surface: #18181b;
+      --surface-hover: #27272a;
+      --border: #27272a;
+      --border-hover: #3f3f46;
       --success: #22c55e;
       --warning: #eab308;
       --danger: #ef4444;
-      --bg-light: #f8fafc;
-      --bg-dark: #1e293b;
-      --text-light: #1e293b;
-      --text-dark: #f8fafc;
-      --border-radius: 8px;
-      --transition: all 0.3s ease;
+      --border-radius: 16px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    [data-theme="dark"] {
-      --bg: var(--bg-dark);
-      --text: var(--text-dark);
-      --card-bg: #334155;
-    }
-
-    [data-theme="light"] {
-      --bg: var(--bg-light);
-      --text: var(--text-light);
-      --card-bg: #ffffff;
+    @media (prefers-color-scheme: light) {
+      :root {
+        --primary-color: #f4f4f5;
+        --secondary-color: #e4e4e7;
+        --accent-color: #71717a;
+        --text-primary: #18181b;
+        --text-secondary: #52525b;
+        --background: #ffffff;
+        --surface: #f8f9fa;
+        --surface-hover: #f1f3f4;
+        --border: #e4e4e7;
+        --border-hover: #d4d4d8;
+      }
     }
 
     * {
@@ -39,19 +46,97 @@
     }
 
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
       line-height: 1.5;
-      transition: var(--transition);
       min-height: 100vh;
       padding: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated background gradient */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(-45deg, var(--background), var(--primary-color), var(--secondary-color), var(--primary-color));
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      z-index: -2;
+    }
+
+    /* Floating particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      animation: float 6s infinite linear;
+      opacity: 0.3;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 1rem;
+      animation: fadeInUp 0.8s ease-out;
     }
 
     header {
@@ -59,147 +144,173 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
     }
 
     h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin: 0;
     }
 
     .theme-toggle {
-      background: none;
-      border: none;
-      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
       cursor: pointer;
       font-size: 1.5rem;
-      padding: 0.5rem;
+      padding: 0.75rem;
       border-radius: var(--border-radius);
       transition: var(--transition);
+      backdrop-filter: blur(20px);
     }
 
     .theme-toggle:hover {
-      background: var(--card-bg);
+      background: var(--surface-hover);
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
     }
 
     .task-form {
-      background: var(--card-bg);
-      padding: 1.5rem;
+      background: var(--surface);
+      padding: 2rem;
       border-radius: var(--border-radius);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
       margin-bottom: 2rem;
       display: grid;
-      gap: 1rem;
+      gap: 1.5rem;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      animation: slideInScale 0.8s ease-out 0.4s both;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .form-group label {
-      font-weight: 500;
-      font-size: 0.875rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
     }
 
     input, button {
-      padding: 0.75rem;
-      border: 1px solid #e2e8f0;
+      padding: 1rem;
+      border: 1px solid var(--border);
       border-radius: var(--border-radius);
       font-size: 1rem;
       transition: var(--transition);
-      background: var(--bg);
-      color: var(--text);
+      background: var(--background);
+      color: var(--text-primary);
     }
 
     input:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.1);
     }
 
     .btn {
-      background: var(--primary);
-      color: white;
-      border: none;
+      background: var(--text-primary);
+      color: var(--background);
+      border: 2px solid var(--text-primary);
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       justify-content: center;
+      transition: var(--transition);
     }
 
     .btn:hover {
-      background: var(--primary-dark);
+      transform: translateY(-2px);
+      background: var(--background);
+      color: var(--text-primary);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     }
 
     .btn-danger {
       background: var(--danger);
+      border-color: var(--danger);
     }
 
     .btn-danger:hover {
-      background: #dc2626;
+      background: var(--background);
+      color: var(--danger);
     }
 
     .btn-success {
       background: var(--success);
+      border-color: var(--success);
     }
 
     .btn-success:hover {
-      background: #16a34a;
+      background: var(--background);
+      color: var(--success);
     }
 
     .filters {
       display: flex;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
+      animation: fadeInUp 0.8s ease-out 0.6s both;
     }
 
     .filter-btn {
-      background: var(--card-bg);
-      border: 1px solid #e2e8f0;
-      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
       border-radius: var(--border-radius);
       cursor: pointer;
       transition: var(--transition);
+      color: var(--text-primary);
+      font-weight: 600;
+      backdrop-filter: blur(20px);
+    }
+
+    .filter-btn:hover {
+      background: var(--surface-hover);
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
     }
 
     .filter-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+      background: var(--text-primary);
+      color: var(--background);
+      border-color: var(--text-primary);
     }
 
     .task-list {
       display: grid;
-      gap: 1rem;
+      gap: 1.5rem;
+      animation: fadeInUp 0.8s ease-out 0.8s both;
     }
 
     .task {
-      background: var(--card-bg);
+      background: var(--surface);
       padding: 1.5rem;
       border-radius: var(--border-radius);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
       display: grid;
-      gap: 1rem;
+      gap: 1.5rem;
       transition: var(--transition);
-      animation: slideIn 0.3s ease;
+      animation: slideInScale 0.3s ease;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
     }
 
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .task:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
     }
 
     .task.urgent {
@@ -226,119 +337,80 @@
 
     .task-title {
       font-weight: 600;
-      font-size: 1.125rem;
+      font-size: 1.25rem;
+      color: var(--text-primary);
     }
 
     .task-meta {
       display: flex;
-      gap: 1rem;
-      color: #64748b;
-      font-size: 0.875rem;
+      gap: 1.5rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
     }
 
     .task-actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 1rem;
     }
 
     .task-actions button {
-      padding: 0.5rem;
+      padding: 0.75rem 1.5rem;
       border-radius: var(--border-radius);
       border: none;
       cursor: pointer;
       transition: var(--transition);
+      font-weight: 600;
     }
 
     .empty-state {
       text-align: center;
-      padding: 3rem;
-      color: #64748b;
-    }
-
-    @media (max-width: 640px) {
-      body {
-        padding: 1rem;
-      }
-
-      .task-form {
-        grid-template-columns: 1fr;
-      }
-
-      .task-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-
-      .task-meta {
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-    }
-
-    .client-input-wrapper {
-      position: relative;
-    }
-
-    .client-suggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: var(--card-bg);
-      border: 1px solid #e2e8f0;
+      padding: 4rem;
+      color: var(--text-secondary);
+      background: var(--surface);
       border-radius: var(--border-radius);
-      margin-top: 4px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      display: none;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
     }
 
-    .client-suggestions.active {
-      display: block;
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--accent-color);
     }
 
-    .client-suggestion {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      transition: var(--transition);
+    .github-config {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
     }
 
-    .client-suggestion:hover {
-      background: var(--primary);
-      color: white;
+    .github-config h2 {
+      color: var(--text-primary);
+      font-weight: 700;
     }
 
-    .client-suggestion i {
-      margin-right: 0.5rem;
-      color: #64748b;
+    .github-config label {
+      color: var(--text-secondary);
     }
 
-    .client-suggestion:hover i {
-      color: white;
+    .github-config input {
+      background: var(--background);
+      border-color: var(--border);
+    }
+
+    .github-config small {
+      color: var(--text-secondary);
     }
 
     .sync-status {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: var(--border-radius);
-      background: var(--card-bg);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      z-index: 1000;
-      transition: var(--transition);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
     }
 
     .sync-status.syncing {
-      background: var(--primary);
-      color: white;
+      background: var(--text-primary);
+      color: var(--background);
     }
 
     .sync-status.error {
@@ -351,128 +423,34 @@
       color: white;
     }
 
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      display: none;
-    }
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
 
-    .overlay.active {
-      display: block;
-    }
+      .task-form {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+      }
 
-    .task-form.disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
+      .task-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
 
-    .github-config {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--card-bg);
-      padding: 2rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      z-index: 1000;
-      display: none;
-      max-width: 500px;
-      width: 90%;
-      border: 1px solid #e2e8f0;
-    }
+      .task-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
 
-    .github-config.active {
-      display: block !important;
-    }
+      .task-actions {
+        flex-direction: column;
+      }
 
-    .github-config h2 {
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .github-config .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .github-config label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .github-config input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #e2e8f0;
-      border-radius: var(--border-radius);
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .github-config small {
-      display: block;
-      margin-top: 0.5rem;
-      color: #64748b;
-    }
-
-    .github-config .btn {
-      width: 100%;
-    }
-
-    .github-config .error-message {
-      color: var(--danger);
-      margin-top: 1rem;
-      padding: 0.75rem;
-      border-radius: var(--border-radius);
-      background: rgba(239, 68, 68, 0.1);
-      display: none;
-    }
-
-    .github-config .error-message.active {
-      display: block;
-    }
-
-    .github-config .token-status {
-      margin-top: 0.75rem;
-      font-size: 0.875rem;
-      padding: 0.5rem;
-      border-radius: var(--border-radius);
-    }
-
-    .github-config .token-status.valid {
-      color: var(--success);
-      background: rgba(34, 197, 94, 0.1);
-    }
-
-    .github-config .token-status.invalid {
-      color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-    }
-
-    #configButton {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-    }
-
-    #configButton.active {
-      background: var(--primary-dark);
-    }
-
-    #configButton.btn-danger {
-      background: var(--danger);
-    }
-
-    #configButton.btn-success {
-      background: var(--success);
+      .task-actions button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -588,6 +566,96 @@
         localStorage.setItem('github_token', value);
       }
     };
+  </script>
+
+  <!-- Füge das Particles-Element hinzu -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Füge das Particles-Skript hinzu -->
+  <script>
+    // Create floating particles
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+      particle.style.animationDelay = Math.random() * 2 + 's';
+      
+      const colors = [
+        'var(--accent-color)', 
+        'var(--text-secondary)',
+        'var(--border-hover)'
+      ];
+      const colorValues = [
+        getComputedStyle(document.documentElement).getPropertyValue('--accent-color'),
+        getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+        getComputedStyle(document.documentElement).getPropertyValue('--border-hover')
+      ];
+      particle.style.background = colorValues[Math.floor(Math.random() * colorValues.length)] + '80';
+      
+      document.getElementById('particles').appendChild(particle);
+      
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 6000);
+    }
+
+    // Create particles periodically
+    setInterval(createParticle, 300);
+
+    // Add smooth hover effects
+    document.querySelectorAll('.btn, .filter-btn, .theme-toggle').forEach(element => {
+      element.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+      });
+      
+      element.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
+
+    // Add click ripple effect
+    document.querySelectorAll('.btn, .filter-btn, .theme-toggle').forEach(element => {
+      element.addEventListener('click', function(e) {
+        const ripple = document.createElement('span');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.cssText = `
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(0);
+          animation: ripple 0.6s linear;
+          width: ${size}px;
+          height: ${size}px;
+          left: ${x}px;
+          top: ${y}px;
+        `;
+        
+        this.appendChild(ripple);
+        
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    });
+
+    // Add ripple animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes ripple {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 
   <!-- Hauptskript -->
