@@ -351,37 +351,6 @@
       color: white;
     }
 
-    .github-config {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--card-bg);
-      padding: 2rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      z-index: 1000;
-      display: none;
-      max-width: 500px;
-      width: 90%;
-    }
-
-    .github-config.active {
-      display: block;
-    }
-
-    .github-config h2 {
-      margin-bottom: 1rem;
-    }
-
-    .github-config .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .github-config input {
-      width: 100%;
-    }
-
     .overlay {
       position: fixed;
       top: 0;
@@ -402,10 +371,65 @@
       pointer-events: none;
     }
 
+    .github-config {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      z-index: 1000;
+      display: none;
+      max-width: 500px;
+      width: 90%;
+      border: 1px solid #e2e8f0;
+    }
+
+    .github-config.active {
+      display: block !important;
+    }
+
+    .github-config h2 {
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .github-config .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .github-config label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .github-config input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .github-config small {
+      display: block;
+      margin-top: 0.5rem;
+      color: #64748b;
+    }
+
+    .github-config .btn {
+      width: 100%;
+    }
+
     .github-config .error-message {
       color: var(--danger);
       margin-top: 1rem;
-      padding: 0.5rem;
+      padding: 0.75rem;
       border-radius: var(--border-radius);
       background: rgba(239, 68, 68, 0.1);
       display: none;
@@ -416,17 +440,39 @@
     }
 
     .github-config .token-status {
-      margin-top: 0.5rem;
+      margin-top: 0.75rem;
       font-size: 0.875rem;
-      color: #64748b;
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
     }
 
     .github-config .token-status.valid {
       color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
     }
 
     .github-config .token-status.invalid {
       color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    #configButton {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+
+    #configButton.active {
+      background: var(--primary-dark);
+    }
+
+    #configButton.btn-danger {
+      background: var(--danger);
+    }
+
+    #configButton.btn-success {
+      background: var(--success);
     }
   </style>
 </head>
@@ -492,18 +538,31 @@
   </div>
 
   <!-- GitHub Konfigurationsdialog -->
-  <div id="overlay" class="overlay"></div>
+  <div id="overlay" class="overlay" onclick="if(GITHUB_CONFIG.token) showGitHubConfig(false)"></div>
   <div id="githubConfig" class="github-config">
     <h2>GitHub Konfiguration</h2>
     <div class="form-group">
       <label for="githubToken">GitHub Personal Access Token</label>
-      <input type="password" id="githubToken" placeholder="ghp_..." />
-      <small>Erstelle einen Token mit 'repo' Berechtigung unter GitHub Settings > Developer Settings > Personal Access Tokens</small>
+      <input 
+        type="password" 
+        id="githubToken" 
+        placeholder="ghp_..." 
+        autocomplete="off"
+        onkeydown="if(event.key === 'Enter') saveGitHubConfig()"
+      />
+      <small>
+        Erstelle einen Token mit 'repo' Berechtigung unter 
+        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+          GitHub Settings > Developer Settings > Personal Access Tokens
+        </a>
+      </small>
       <div class="token-status" id="tokenStatus"></div>
     </div>
     <div class="error-message" id="tokenError"></div>
     <div class="form-group">
-      <button class="btn" onclick="saveGitHubConfig()">Speichern</button>
+      <button class="btn" onclick="saveGitHubConfig()">
+        <i class="fas fa-save"></i> Token speichern
+      </button>
     </div>
   </div>
 
@@ -732,28 +791,33 @@
 
     // Modifiziere die showGitHubConfig Funktion
     function showGitHubConfig(show = true) {
+      console.log('Zeige GitHub Konfiguration:', show); // Debug-Log
       const config = document.getElementById('githubConfig');
       const overlay = document.getElementById('overlay');
       const configButton = document.getElementById('configButton');
       
-      if (config && overlay) {
-        if (show) {
-          config.classList.add('active');
-          overlay.classList.add('active');
-          if (configButton) {
-            configButton.classList.add('active');
-          }
-          // Fokussiere das Token-Eingabefeld
-          const tokenInput = document.getElementById('githubToken');
-          if (tokenInput) {
-            tokenInput.focus();
-          }
-        } else {
-          config.classList.remove('active');
-          overlay.classList.remove('active');
-          if (configButton) {
-            configButton.classList.remove('active');
-          }
+      if (!config || !overlay) {
+        console.error('Konfigurationsdialog oder Overlay nicht gefunden!'); // Debug-Log
+        return;
+      }
+
+      if (show) {
+        config.classList.add('active');
+        overlay.classList.add('active');
+        if (configButton) {
+          configButton.classList.add('active');
+        }
+        // Fokussiere das Token-Eingabefeld
+        const tokenInput = document.getElementById('githubToken');
+        if (tokenInput) {
+          tokenInput.focus();
+          tokenInput.value = ''; // Lösche alten Token
+        }
+      } else {
+        config.classList.remove('active');
+        overlay.classList.remove('active');
+        if (configButton) {
+          configButton.classList.remove('active');
         }
       }
     }
@@ -1077,8 +1141,8 @@
 
       // Prüfe, ob ein Token vorhanden ist
       if (!GITHUB_CONFIG.token) {
+        console.log('Kein Token gefunden, zeige Dialog...'); // Debug-Log
         showGitHubConfig(true);
-        return;
       }
 
       try {
