@@ -378,49 +378,236 @@
       color: var(--accent-color);
     }
 
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
     .github-config {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
       background: var(--surface);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      max-width: 500px;
+      width: 90%;
       border: 1px solid var(--border);
       backdrop-filter: blur(20px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .github-config.active {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
     }
 
     .github-config h2 {
+      margin-bottom: 1.5rem;
       color: var(--text-primary);
       font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .github-config .form-group {
+      margin-bottom: 1.5rem;
     }
 
     .github-config label {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
       color: var(--text-secondary);
+      font-size: 0.95rem;
     }
 
     .github-config input {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
       background: var(--background);
-      border-color: var(--border);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    .github-config input:focus {
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.1);
     }
 
     .github-config small {
+      display: block;
+      margin-top: 0.75rem;
       color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .github-config small a {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .github-config small a:hover {
+      color: var(--text-primary);
+    }
+
+    .github-config .btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+    }
+
+    .github-config .error-message {
+      color: var(--danger);
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      background: rgba(239, 68, 68, 0.1);
+      display: none;
+      font-size: 0.95rem;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .github-config .error-message.active {
+      display: block;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    .github-config .token-status {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+    }
+
+    .github-config .token-status.valid {
+      color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .github-config .token-status.invalid {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    #configButton {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    #configButton.active {
+      background: var(--text-primary);
+      color: var(--background);
+    }
+
+    #configButton.btn-danger {
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    #configButton.btn-danger:hover {
+      background: var(--background);
+      color: var(--danger);
+    }
+
+    #configButton.btn-success {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    #configButton.btn-success:hover {
+      background: var(--background);
+      color: var(--success);
     }
 
     .sync-status {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
       background: var(--surface);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      z-index: 1000;
+      transition: var(--transition);
       border: 1px solid var(--border);
       backdrop-filter: blur(20px);
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .sync-status.hidden {
+      transform: translateY(100%);
+      opacity: 0;
     }
 
     .sync-status.syncing {
       background: var(--text-primary);
       color: var(--background);
+      border-color: var(--text-primary);
+    }
+
+    .sync-status.syncing i {
+      animation: spin 1s linear infinite;
     }
 
     .sync-status.error {
       background: var(--danger);
       color: white;
+      border-color: var(--danger);
     }
 
     .sync-status.success {
       background: var(--success);
       color: white;
+      border-color: var(--success);
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .task-form.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      filter: blur(1px);
+      transition: var(--transition);
     }
 
     @media (max-width: 768px) {
@@ -450,6 +637,18 @@
 
       .task-actions button {
         width: 100%;
+      }
+
+      .github-config {
+        width: 95%;
+        padding: 1.5rem;
+      }
+
+      .sync-status {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        justify-content: center;
       }
     }
   </style>
