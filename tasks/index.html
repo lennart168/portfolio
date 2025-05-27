@@ -923,22 +923,36 @@
         taskList.innerHTML = "";
 
         const filteredTasks = tasks.filter(task => {
-          if (currentFilter === 'all') return true;
-          if (currentFilter === 'active') return !task.done;
-          if (currentFilter === 'completed') return task.done;
-          if (currentFilter === 'urgent') return getTaskStatus(task) === 'urgent' && !task.done;
-          return true;
+          switch (currentFilter) {
+            case 'all':
+              return !task.done; // Zeige nur aktive Aufgaben
+            case 'active':
+              return !task.done;
+            case 'completed':
+              return task.done;
+            case 'urgent':
+              return getTaskStatus(task) === 'urgent' && !task.done;
+            default:
+              return !task.done;
+          }
         });
 
         if (filteredTasks.length === 0) {
           taskList.innerHTML = `
             <div class="empty-state">
               <i class="fas fa-clipboard-list fa-3x"></i>
-              <p>Keine Aufgaben gefunden</p>
+              <p>${currentFilter === 'completed' ? 'Keine erledigten Aufgaben' : 'Keine aktiven Aufgaben'}</p>
             </div>
           `;
           return;
         }
+
+        // Sortiere Tasks nach Deadline (dringendste zuerst)
+        filteredTasks.sort((a, b) => {
+          const dateA = new Date(a.deadline);
+          const dateB = new Date(b.deadline);
+          return dateA - dateB;
+        });
 
         filteredTasks.forEach(task => {
           const status = getTaskStatus(task);
