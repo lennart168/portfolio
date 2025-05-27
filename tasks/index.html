@@ -434,9 +434,14 @@
   <div class="container">
     <header>
       <h1>🎬 Video-Deadline-Manager</h1>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <i class="fas fa-moon"></i>
-      </button>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button class="btn" onclick="showGitHubConfig(true)" id="configButton">
+          <i class="fas fa-cog"></i> GitHub Token konfigurieren
+        </button>
+        <button class="theme-toggle" onclick="toggleTheme()">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
     </header>
 
     <form class="task-form" onsubmit="addTask(event)" id="taskForm">
@@ -725,31 +730,68 @@
       }
     }
 
-    // Funktion zum Anzeigen/Ausblenden des Konfigurationsdialogs
+    // Modifiziere die showGitHubConfig Funktion
     function showGitHubConfig(show = true) {
       const config = document.getElementById('githubConfig');
       const overlay = document.getElementById('overlay');
+      const configButton = document.getElementById('configButton');
+      
       if (config && overlay) {
         if (show) {
           config.classList.add('active');
           overlay.classList.add('active');
+          if (configButton) {
+            configButton.classList.add('active');
+          }
+          // Fokussiere das Token-Eingabefeld
+          const tokenInput = document.getElementById('githubToken');
+          if (tokenInput) {
+            tokenInput.focus();
+          }
         } else {
           config.classList.remove('active');
           overlay.classList.remove('active');
+          if (configButton) {
+            configButton.classList.remove('active');
+          }
         }
       }
     }
 
-    // Modifiziere die checkGitHubConfig Funktion
-    function checkGitHubConfig() {
-      if (!GITHUB_CONFIG.token) {
-        showGitHubConfig(true);
-        return false;
+    // Modifiziere die updateFormStatus Funktion
+    function updateFormStatus() {
+      const form = document.getElementById('taskForm');
+      const configButton = document.getElementById('configButton');
+      
+      if (form && configButton) {
+        if (!GITHUB_CONFIG.token) {
+          form.classList.add('disabled');
+          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+          configButton.classList.add('btn-danger');
+          showGitHubConfig(true); // Zeige den Dialog automatisch
+        } else {
+          form.classList.remove('disabled');
+          updateTokenStatus('Token konfiguriert', true);
+          configButton.classList.remove('btn-danger');
+          configButton.classList.add('btn-success');
+        }
       }
-      return true;
     }
 
-    // Funktion zum Aktualisieren des Token-Status
+    // Füge Event-Listener für Escape-Taste hinzu
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && GITHUB_CONFIG.token) {
+        showGitHubConfig(false);
+      }
+    });
+
+    // Modifiziere den Overlay-Click-Handler
+    document.getElementById('overlay')?.addEventListener('click', (e) => {
+      if (GITHUB_CONFIG.token) {
+        showGitHubConfig(false);
+      }
+    });
+
     function updateTokenStatus(message, isValid = null) {
       const status = document.getElementById('tokenStatus');
       const error = document.getElementById('tokenError');
@@ -763,21 +805,6 @@
       }
     }
 
-    // Funktion zum Aktualisieren des Formular-Status
-    function updateFormStatus() {
-      const form = document.getElementById('taskForm');
-      if (form) {
-        if (!GITHUB_CONFIG.token) {
-          form.classList.add('disabled');
-          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
-        } else {
-          form.classList.remove('disabled');
-          updateTokenStatus('Token konfiguriert', true);
-        }
-      }
-    }
-
-    // Modifiziere die saveGitHubConfig Funktion
     function saveGitHubConfig() {
       const tokenInput = document.getElementById('githubToken');
       if (!tokenInput) return;
@@ -807,7 +834,6 @@
       });
     }
 
-    // Modifiziere die updateFileContent Funktion
     async function updateFileContent(content, sha) {
       if (!checkGitHubConfig()) {
         throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
@@ -868,7 +894,6 @@
       }
     }
 
-    // Modifiziere die getFileContent Funktion
     async function getFileContent() {
       if (!checkGitHubConfig()) {
         throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
@@ -910,7 +935,6 @@
       }
     }
 
-    // Modifiziere die testGitHubAccess Funktion
     async function testGitHubAccess() {
       if (!checkGitHubConfig()) {
         throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
