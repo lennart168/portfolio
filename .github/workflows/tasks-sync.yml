@@ -7,15 +7,13 @@ on:
 
 permissions:
   contents: write
-  id-token: write  # Für OIDC-Token
+  id-token: write
 
 jobs:
   sync-tasks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.TASKS_TOKEN }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -23,8 +21,6 @@ jobs:
           node-version: '18'
           
       - name: Update Tasks
-        env:
-          GITHUB_TOKEN: ${{ secrets.TASKS_TOKEN }}
         run: |
           # Erstelle tasks-Ordner falls nicht vorhanden
           mkdir -p tasks
@@ -51,6 +47,4 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add tasks/data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tasks via GitHub Action" && git push)
-        env:
-          GITHUB_TOKEN: ${{ secrets.TASKS_TOKEN }} 
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tasks via GitHub Action" && git push) 
