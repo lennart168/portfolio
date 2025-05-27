@@ -722,7 +722,7 @@
 
   <div class="container">
     <header>
-      <h1>🎬 Video-Deadline-Manager</h1>
+  <h1>🎬 Video-Deadline-Manager</h1>
       <div style="display: flex; gap: 1rem; align-items: center;">
         <button class="btn" id="configButton">
           <i class="fas fa-cog"></i> GitHub Token konfigurieren
@@ -733,8 +733,8 @@
       </div>
     </header>
 
-    <form class="task-form" id="taskForm" novalidate onsubmit="return false;">
-      <div class="form-group">
+    <form class="task-form" id="taskForm" novalidate>
+  <div class="form-group">
         <label for="client">Kunde/Projekt</label>
         <div class="client-input-wrapper">
           <input 
@@ -746,7 +746,7 @@
             autocomplete="off"
           />
           <div id="clientSuggestions" class="client-suggestions"></div>
-        </div>
+  </div>
       </div>
       <div class="form-group">
         <label for="videos">Anzahl Videos</label>
@@ -1220,11 +1220,11 @@
       }
 
       // Funktion zum Rendern der Tasks
-      function renderTasks() {
-        const taskList = document.getElementById("taskList");
+    function renderTasks() {
+      const taskList = document.getElementById("taskList");
         if (!taskList) return;
         
-        taskList.innerHTML = "";
+      taskList.innerHTML = "";
 
         const filteredTasks = tasks.filter(task => {
           switch (currentFilter) {
@@ -1260,10 +1260,10 @@
 
         filteredTasks.forEach(task => {
           const status = getTaskStatus(task);
-          const div = document.createElement("div");
+        const div = document.createElement("div");
           div.className = `task ${status} ${task.done ? "completed" : ""}`;
           
-          div.innerHTML = `
+        div.innerHTML = `
             <div class="task-header">
               <div class="task-title">${task.client}</div>
               <div class="task-meta">
@@ -1279,11 +1279,11 @@
               <button onclick="deleteTask(${task.id})" class="btn btn-danger">
                 <i class="fas fa-trash"></i> Löschen
               </button>
-            </div>
-          `;
-          taskList.appendChild(div);
-        });
-      }
+          </div>
+        `;
+        taskList.appendChild(div);
+      });
+    }
 
       // Hilfsfunktionen für Tasks
       function getTaskStatus(task) {
@@ -1310,11 +1310,53 @@
         if (event) {
           event.preventDefault();
         }
-        console.log('Manueller Aufruf von addTask');
-        const form = document.getElementById('taskForm');
-        if (form) {
-          form.dispatchEvent(new Event('submit'));
+        
+        if (!GITHUB_CONFIG.token) {
+          updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
+          showGitHubConfig(true);
+          return false;
         }
+
+        const clientInput = document.getElementById('client');
+        const videosInput = document.getElementById('videos');
+        const deadlineInput = document.getElementById('deadline');
+
+        if (!clientInput || !videosInput || !deadlineInput) {
+          console.error('Formular-Elemente nicht gefunden');
+          return false;
+        }
+
+        const client = clientInput.value.trim();
+        const videos = parseInt(videosInput.value);
+        const deadline = deadlineInput.value;
+
+        if (!client || !videos || !deadline) {
+          updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
+          return false;
+        }
+
+        const newTask = {
+          id: Date.now(),
+          client: client,
+          videos: videos,
+          deadline: deadline,
+          done: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        tasks.push(newTask);
+        await saveTasks();
+
+        // Formular zurücksetzen
+        clientInput.value = '';
+        videosInput.value = '';
+        deadlineInput.value = '';
+        clientInput.focus();
+
+        // Aktualisiere die Anzeige
+        renderTasks();
+        updateSyncStatus('success', 'Aufgabe hinzugefügt');
         return false;
       }
 
@@ -1323,18 +1365,18 @@
         if (task) {
           task.done = !task.done;
           task.updatedAt = new Date().toISOString();
-          saveTasks();
-          renderTasks();
+      saveTasks();
+      renderTasks();
         }
       }
 
       function deleteTask(taskId) {
         if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
           tasks = tasks.filter(t => t.id !== taskId);
-          saveTasks();
-          renderTasks();
-        }
+        saveTasks();
+        renderTasks();
       }
+    }
 
       function saveTasks() {
         tasks.forEach(task => {
@@ -1398,6 +1440,25 @@
         `;
       }
 
+      // Funktion zum Aktualisieren des Formular-Status
+      function updateFormStatus() {
+        if (!taskForm || !configButton) return;
+
+        if (!GITHUB_CONFIG.token) {
+          taskForm.classList.add('disabled');
+          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+          configButton.classList.add('btn-danger');
+          if (!configDialog.classList.contains('active')) {
+            showGitHubConfig(true);
+          }
+        } else {
+          taskForm.classList.remove('disabled');
+          updateTokenStatus('Token konfiguriert', true);
+          configButton.classList.remove('btn-danger');
+          configButton.classList.add('btn-success');
+        }
+      }
+
       // Event-Listener für den Save-Button
       if (saveButton) {
         saveButton.addEventListener('click', function() {
@@ -1454,33 +1515,26 @@
 
       // Event-Listener für das Formular
       if (taskForm) {
-        console.log('Formular gefunden, füge Event-Listener hinzu');
         taskForm.addEventListener('submit', async function(e) {
-          console.log('Formular-Submit erkannt');
           e.preventDefault();
-          e.stopPropagation();
+          console.log('Formular-Submit erkannt');
           
           if (!GITHUB_CONFIG.token) {
-            console.log('Kein Token gefunden');
             updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
             showGitHubConfig(true);
-            return false;
+            return;
           }
 
           const client = document.getElementById('client').value.trim();
           const videos = parseInt(document.getElementById('videos').value);
           const deadline = document.getElementById('deadline').value;
 
-          console.log('Formular-Daten:', { client, videos, deadline });
-
           if (!client || !videos || !deadline) {
-            console.log('Formular nicht vollständig ausgefüllt');
             updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
-            return false;
+            return;
           }
 
           try {
-            console.log('Erstelle neue Aufgabe');
             const newTask = {
               id: Date.now(),
               client: client,
@@ -1491,25 +1545,20 @@
               updatedAt: new Date().toISOString()
             };
 
-            console.log('Füge Aufgabe hinzu:', newTask);
             tasks.push(newTask);
-            
-            console.log('Speichere Tasks');
             await saveTasks();
 
-            console.log('Setze Formular zurück');
+            // Formular zurücksetzen
             taskForm.reset();
             document.getElementById('client').focus();
 
-            console.log('Aktualisiere Anzeige');
+            // Aktualisiere die Anzeige
             renderTasks();
             updateSyncStatus('success', 'Aufgabe hinzugefügt');
           } catch (error) {
             console.error('Fehler beim Hinzufügen der Aufgabe:', error);
             updateSyncStatus('error', `Fehler: ${error.message}`);
           }
-          
-          return false;
         });
       }
 
@@ -1539,7 +1588,7 @@
       window.saveTasks = saveTasks;
       window.getTaskStatus = getTaskStatus;
       window.formatDate = formatDate;
-      window.addTask = addTask;
+      window.addTask = null;
 
       // Initialisiere die Anwendung
       const savedTheme = localStorage.getItem('theme') || 'light';
