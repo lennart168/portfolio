@@ -970,12 +970,14 @@
 
       // Task-Management Funktionen
       function addTask(event) {
-        event.preventDefault();
+        if (event) {
+          event.preventDefault();
+        }
         
         if (!GITHUB_CONFIG.token) {
           updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
           showGitHubConfig(true);
-          return;
+          return false;
         }
 
         const clientInput = document.getElementById('client');
@@ -984,7 +986,7 @@
 
         if (!clientInput || !videosInput || !deadlineInput) {
           console.error('Formular-Elemente nicht gefunden');
-          return;
+          return false;
         }
 
         const client = clientInput.value.trim();
@@ -993,7 +995,7 @@
 
         if (!client || !videos || !deadline) {
           updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
-          return;
+          return false;
         }
 
         const newTask = {
@@ -1018,6 +1020,7 @@
         // Aktualisiere die Anzeige
         renderTasks();
         updateSyncStatus('success', 'Aufgabe hinzugefügt');
+        return false;
       }
 
       function toggleDone(taskId) {
@@ -1170,6 +1173,14 @@
       if (configButton) {
         configButton.addEventListener('click', function() {
           showGitHubConfig(true);
+        });
+      }
+
+      // Event-Listener für das Formular
+      if (taskForm) {
+        taskForm.addEventListener('submit', function(event) {
+          event.preventDefault();
+          addTask(event);
         });
       }
 
