@@ -793,9 +793,72 @@
       }
     }
 
+    async function checkGitHubPermissions() {
+      const config = window.GITHUB_CONFIG;
+      try {
+        console.log('Prüfe GitHub-Berechtigungen...');
+        
+        // Prüfe Token-Berechtigungen
+        const tokenResponse = await fetch(
+          'https://api.github.com/user',
+          {
+            headers: {
+              'Authorization': `token ${config.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        console.log('Token Test Status:', tokenResponse.status);
+        const tokenData = await tokenResponse.json();
+        console.log('Token Test Response:', tokenData);
+
+        if (!tokenResponse.ok) {
+          throw new Error(`Token ungültig oder unzureichende Berechtigungen: ${tokenData.message}`);
+        }
+
+        // Prüfe Repository-Zugriff
+        const repoResponse = await fetch(
+          `https://api.github.com/repos/${config.repo}`,
+          {
+            headers: {
+              'Authorization': `token ${config.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        console.log('Repository Test Status:', repoResponse.status);
+        const repoData = await repoResponse.json();
+        console.log('Repository Test Response:', repoData);
+
+        if (!repoResponse.ok) {
+          throw new Error(`Repository nicht gefunden oder kein Zugriff: ${repoData.message}`);
+        }
+
+        // Prüfe Schreibrechte
+        const permissions = repoData.permissions;
+        console.log('Repository Berechtigungen:', permissions);
+
+        if (!permissions.push) {
+          throw new Error('Keine Schreibrechte für das Repository. Bitte Token mit "repo" Scope erstellen.');
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Berechtigungsprüfung fehlgeschlagen:', error);
+        throw error;
+      }
+    }
+
     async function updateFileContent(content, sha) {
       const config = window.GITHUB_CONFIG;
       try {
+        // Prüfe zuerst die Berechtigungen
+        await checkGitHubPermissions();
+
         // Wenn keine SHA vorhanden ist, versuche sie zu holen
         if (!sha) {
           const existingData = await getFileContent();
@@ -824,7 +887,8 @@
             body: JSON.stringify({
               message: 'Update tasks',
               content: btoa(JSON.stringify(content, null, 2)),
-              sha: sha || null
+              sha: sha || null,
+              branch: 'main'  // Explizit den Branch angeben
             })
           }
         );
@@ -856,6 +920,9 @@
       updateSyncStatus('syncing', 'Synchronisiere...');
 
       try {
+        // Prüfe zuerst die Berechtigungen
+        await checkGitHubPermissions();
+
         // Versuche zuerst, die Datei zu erstellen, wenn sie nicht existiert
         const existingData = await getFileContent();
         console.log('Vorhandene Daten:', existingData ? 'Ja' : 'Nein');
