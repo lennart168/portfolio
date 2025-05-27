@@ -1105,8 +1105,19 @@
 
                 const data = await response.json();
                 console.log('Daten erfolgreich geladen, SHA:', data.sha);
+                
+                // Dekodiere und parse den Inhalt
+                const content = JSON.parse(atob(data.content));
+                console.log('Geladene Tasks:', content);
+                
+                // Stelle sicher, dass wir ein Array haben
+                if (!Array.isArray(content)) {
+                    console.error('Geladene Daten sind kein Array:', content);
+                    return null;
+                }
+                
                 return {
-                    content: JSON.parse(atob(data.content)),
+                    content: content,
                     sha: data.sha
                 };
             } catch (error) {
@@ -1196,11 +1207,8 @@
 
                 console.log('Synchronisation erfolgreich abgeschlossen');
                 updateSyncStatus('success', 'Synchronisiert');
-                
-                // Aktualisiere die Anzeige
                 renderTasks();
                 
-                // Verstecke die Erfolgsmeldung nach 3 Sekunden
                 setTimeout(() => {
                     const syncStatus = document.getElementById('syncStatus');
                     if (syncStatus) {
@@ -1210,7 +1218,7 @@
             } catch (error) {
                 console.error('Synchronisationsfehler:', error);
                 updateSyncStatus('error', `Synchronisationsfehler: ${error.message}`);
-                throw error; // Werfe den Fehler weiter, damit er behandelt werden kann
+                throw error;
             } finally {
                 syncInProgress = false;
             }
@@ -1394,6 +1402,7 @@
 
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
+            console.log('Initialisiere Anwendung...');
             if (!GITHUB_CONFIG.token) {
                 console.log('Kein Token gefunden, zeige Dialog...');
                 updateFormStatus();
@@ -1403,7 +1412,18 @@
                 updateFormStatus();
                 try {
                     updateSyncStatus('syncing', 'Lade Aufgaben...');
-                    await syncTasks();
+                    
+                    // Lade die Tasks von GitHub
+                    const existingData = await getFileContent();
+                    if (existingData && Array.isArray(existingData.content)) {
+                        console.log('Lade', existingData.content.length, 'Tasks von GitHub');
+                        tasks = existingData.content;
+                    } else {
+                        console.log('Keine Tasks gefunden, initialisiere leeres Array');
+                        tasks = [];
+                    }
+                    
+                    // Zeige die Tasks an
                     renderTasks();
                     updateSyncStatus('success', 'Synchronisiert');
                 } catch (error) {
