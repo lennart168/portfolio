@@ -1329,21 +1329,55 @@
             }
         }
 
-        function deleteTask(taskId) {
-            if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+        async function deleteTask(taskId) {
+            if (!confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+                return;
+            }
+
+            try {
+                // Aktualisiere den Sync-Status
+                updateSyncStatus('syncing', 'Lösche Aufgabe...');
+
+                // Entferne die Task aus dem Array
                 tasks = tasks.filter(t => t.id !== taskId);
-                saveTasks();
+                
+                // Speichere und synchronisiere die Änderungen
+                await saveTasks();
+                
+                // Aktualisiere die Anzeige
                 renderTasks();
+                
+                // Zeige Erfolgsmeldung
+                updateSyncStatus('success', 'Aufgabe gelöscht');
+                
+                // Verstecke die Erfolgsmeldung nach 3 Sekunden
+                setTimeout(() => {
+                    const syncStatus = document.getElementById('syncStatus');
+                    if (syncStatus) {
+                        syncStatus.classList.add('hidden');
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Fehler beim Löschen:', error);
+                updateSyncStatus('error', `Fehler beim Löschen: ${error.message}`);
             }
         }
 
-        function saveTasks() {
-            tasks.forEach(task => {
-                if (!task.updatedAt) {
-                    task.updatedAt = new Date().toISOString();
-                }
-            });
-            syncTasks();
+        async function saveTasks() {
+            try {
+                // Aktualisiere die updatedAt-Zeitstempel
+                tasks.forEach(task => {
+                    if (!task.updatedAt) {
+                        task.updatedAt = new Date().toISOString();
+                    }
+                });
+
+                // Synchronisiere mit GitHub
+                await syncTasks();
+            } catch (error) {
+                console.error('Fehler beim Speichern:', error);
+                throw error;
+            }
         }
 
         // Mache Funktionen global verfügbar
