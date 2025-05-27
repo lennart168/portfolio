@@ -689,6 +689,51 @@
         justify-content: center;
       }
     }
+
+    /* Kunden-Vorschläge Styles */
+    .client-input-wrapper {
+      position: relative;
+    }
+
+    .client-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      margin-top: 0.5rem;
+      z-index: 1000;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(20px);
+    }
+
+    .client-suggestions.active {
+      display: block;
+      animation: slideInScale 0.2s ease-out;
+    }
+
+    .client-suggestion {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .client-suggestion:hover {
+      background: var(--surface-hover);
+    }
+
+    .client-suggestion i {
+      color: var(--accent-color);
+    }
   </style>
 </head>
 <body data-theme="light">
@@ -1118,6 +1163,75 @@
 
         // Event-Listener
         // ... existing event listeners ...
+
+        // Kunden-Vorschläge Funktionen
+        function updateClientList() {
+            const uniqueClients = [...new Set(tasks.map(task => task.client))].sort();
+            return uniqueClients;
+        }
+
+        function showClientSuggestions(input) {
+            const clientSuggestions = document.getElementById('clientSuggestions');
+            if (!clientSuggestions) return;
+            
+            const inputValue = input.toLowerCase().trim();
+            const clients = updateClientList();
+            
+            if (!inputValue) {
+                clientSuggestions.innerHTML = '';
+                clientSuggestions.classList.remove('active');
+                return;
+            }
+
+            const filteredClients = clients.filter(client => 
+                client.toLowerCase().includes(inputValue)
+            );
+
+            if (filteredClients.length === 0) {
+                clientSuggestions.innerHTML = '';
+                clientSuggestions.classList.remove('active');
+                return;
+            }
+
+            clientSuggestions.innerHTML = filteredClients
+                .map(client => `
+                    <div class="client-suggestion" onclick="selectClient('${client}')">
+                        <i class="fas fa-building"></i>${client}
+                    </div>
+                `)
+                .join('');
+            
+            clientSuggestions.classList.add('active');
+        }
+
+        function selectClient(client) {
+            const clientInput = document.getElementById('client');
+            const clientSuggestions = document.getElementById('clientSuggestions');
+            if (!clientInput || !clientSuggestions) return;
+            clientInput.value = client;
+            clientSuggestions.classList.remove('active');
+        }
+
+        // Event-Listener für Kunden-Eingabe
+        if (clientInput) {
+            clientInput.addEventListener('input', function() {
+                showClientSuggestions(this.value);
+            });
+            clientInput.addEventListener('focus', function() {
+                showClientSuggestions(this.value);
+            });
+        }
+
+        // Schließe Vorschläge beim Klick außerhalb
+        document.addEventListener('click', (e) => {
+            const clientInput = document.getElementById('client');
+            const clientSuggestions = document.getElementById('clientSuggestions');
+            if (clientInput && clientSuggestions && 
+                !clientInput.contains(e.target) && 
+                !clientSuggestions.contains(e.target)) {
+                clientSuggestions.classList.remove('active');
+            }
+        });
 
         // Starte die Initialisierung
         await initializeApp();
