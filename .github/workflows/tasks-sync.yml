@@ -5,13 +5,17 @@ on:
   repository_dispatch:  # API-Trigger
     types: [update_tasks]
 
+permissions:
+  contents: write
+  id-token: write  # Für OIDC-Token
+
 jobs:
   sync-tasks:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TASKS_TOKEN }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -22,21 +26,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.TASKS_TOKEN }}
         run: |
-          # Lese die aktuelle data.json
+          # Erstelle tasks-Ordner falls nicht vorhanden
+          mkdir -p tasks
+          
+          # Lese die aktuelle data.json oder erstelle sie
           if [ -f "tasks/data.json" ]; then
             echo "Bestehende Daten gefunden"
+            # Lese den Inhalt aus dem client_payload
+            if [ -n "${{ github.event.client_payload.content }}" ]; then
+              echo '${{ github.event.client_payload.content }}' > tasks/data.json
+              echo "Daten aktualisiert"
+            fi
           else
-            echo "[]" > tasks/data.json
-            git config --global user.name "GitHub Actions"
-            git config --global user.email "actions@github.com"
-            git add tasks/data.json
-            git commit -m "Initialisiere tasks/data.json"
-            git push
+            if [ -n "${{ github.event.client_payload.content }}" ]; then
+              echo '${{ github.event.client_payload.content }}' > tasks/data.json
+            else
+              echo "[]" > tasks/data.json
+            fi
+            echo "Neue data.json erstellt"
           fi
           
-      - name: Commit and Push if Changed
+      - name: Commit and Push
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add tasks/data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tasks" && git push) 
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tasks via GitHub Action" && git push)
+        env:
+          GITHUB_TOKEN: ${{ secrets.TASKS_TOKEN }} 

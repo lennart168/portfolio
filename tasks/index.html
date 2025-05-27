@@ -783,19 +783,24 @@
             headers: {
               'Accept': 'application/vnd.github.v3+json',
               'Content-Type': 'application/json',
-              'User-Agent': 'Video-Tasks-Manager'
+              'User-Agent': 'Video-Tasks-Manager',
+              'Authorization': `Bearer ${GITHUB_CONFIG.token}` // Verwende den Token für die Authentifizierung
             },
             body: JSON.stringify({
               event_type: 'update_tasks',
               client_payload: {
-                content: content
+                content: JSON.stringify(content, null, 2) // Formatiere den JSON-String
               }
             })
           }
         );
 
+        console.log('GitHub Action Response Status:', response.status);
+        const responseText = await response.text();
+        console.log('GitHub Action Response:', responseText);
+
         if (!response.ok) {
-          throw new Error(`GitHub Action Fehler (${response.status}): ${await response.text()}`);
+          throw new Error(`GitHub Action Fehler (${response.status}): ${responseText}`);
         }
 
         console.log('GitHub Action erfolgreich gestartet');
