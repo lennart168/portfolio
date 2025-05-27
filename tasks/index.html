@@ -687,7 +687,7 @@
         );
 
         console.log('GitHub API Antwort:', response.status, response.statusText);
-
+        
         if (response.status === 404) {
           console.log('Datei existiert noch nicht, wird erstellt...');
           return null;
@@ -780,7 +780,7 @@
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('GitHub API Fehler Details:', errorData);
+          console.error('Fehler beim Speichern:', errorData);
           throw new Error(`GitHub API Fehler: ${response.status} ${response.statusText} - ${errorData.message || ''}`);
         }
 
