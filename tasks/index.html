@@ -518,7 +518,7 @@
       </div>
     </header>
 
-    <form class="task-form" onsubmit="addTask(event)" id="taskForm">
+    <form class="task-form" id="taskForm">
       <div class="form-group">
         <label for="client">Kunde/Projekt</label>
         <div class="client-input-wrapper">
@@ -969,6 +969,57 @@
       }
 
       // Task-Management Funktionen
+      function addTask(event) {
+        event.preventDefault();
+        
+        if (!GITHUB_CONFIG.token) {
+          updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
+          showGitHubConfig(true);
+          return;
+        }
+
+        const clientInput = document.getElementById('client');
+        const videosInput = document.getElementById('videos');
+        const deadlineInput = document.getElementById('deadline');
+
+        if (!clientInput || !videosInput || !deadlineInput) {
+          console.error('Formular-Elemente nicht gefunden');
+          return;
+        }
+
+        const client = clientInput.value.trim();
+        const videos = parseInt(videosInput.value);
+        const deadline = deadlineInput.value;
+
+        if (!client || !videos || !deadline) {
+          updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
+          return;
+        }
+
+        const newTask = {
+          id: Date.now(),
+          client: client,
+          videos: videos,
+          deadline: deadline,
+          done: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        tasks.push(newTask);
+        saveTasks();
+
+        // Formular zurücksetzen
+        clientInput.value = '';
+        videosInput.value = '';
+        deadlineInput.value = '';
+        clientInput.focus();
+
+        // Aktualisiere die Anzeige
+        renderTasks();
+        updateSyncStatus('success', 'Aufgabe hinzugefügt');
+      }
+
       function toggleDone(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (task) {
@@ -1137,6 +1188,7 @@
       window.saveTasks = saveTasks;
       window.getTaskStatus = getTaskStatus;
       window.formatDate = formatDate;
+      window.addTask = addTask;
 
       // Initialisiere die Anwendung
       const savedTheme = localStorage.getItem('theme') || 'light';
