@@ -471,27 +471,15 @@
 
   <!-- Konfiguration -->
   <script>
-    // Fallback-Konfiguration, falls config.js nicht geladen werden kann
+    // Konfiguration für GitHub Actions
     window.GITHUB_CONFIG = {
-      // TODO: Ersetzen Sie diesen Platzhalter mit Ihrem neuen Token
-      // WICHTIG: Der Token muss den 'repo' Scope haben
-      token: "HIER_NEUEN_TOKEN_EINFÜGEN",
-      repo: "lennart168/portfolio"
+      repo: "lennart168/portfolio",
+      owner: "lennart168"
     };
   </script>
-  <script src="config.js" onerror="console.log('Konfigurationsdatei konnte nicht geladen werden, verwende Fallback-Konfiguration')"></script>
   
   <!-- Hauptskript -->
   <script>
-    // Stelle sicher, dass GITHUB_CONFIG verfügbar ist
-    if (typeof GITHUB_CONFIG === 'undefined') {
-      console.error('GitHub Konfiguration nicht gefunden!');
-      document.getElementById('syncStatus').innerHTML = `
-        <i class="fas fa-exclamation-circle"></i>
-        <span>Fehler: Konfiguration nicht gefunden</span>
-      `;
-    }
-
     let tasks = [];
     let currentFilter = 'all';
     let syncInProgress = false;
@@ -749,29 +737,55 @@
       }
     }
 
-    async function getFileContent() {
-      const config = window.GITHUB_CONFIG;
+    async function updateFileContent(content) {
       try {
-        console.log('Versuche Daten von GitHub zu laden...');
-        console.log('Repository:', config.repo);
-        console.log('Token vorhanden:', !!config.token);
+        console.log('Starte GitHub Action für Update...');
+        
+        // Trigger GitHub Action
+        const response = await fetch(
+          `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/dispatches`,
+          {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Video-Tasks-Manager'
+            },
+            body: JSON.stringify({
+              event_type: 'update_tasks',
+              client_payload: {
+                content: content
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`GitHub Action Fehler (${response.status}): ${await response.text()}`);
+        }
+
+        console.log('GitHub Action erfolgreich gestartet');
+        return true;
+      } catch (error) {
+        console.error('Fehler beim Starten der GitHub Action:', error);
+        updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
+        return false;
+      }
+    }
+
+    async function getFileContent() {
+      try {
+        console.log('Lade Daten von GitHub...');
         
         const response = await fetch(
-          `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
+          `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/main/tasks/data.json`,
           {
             headers: {
-              'Authorization': `token ${config.token}`,
-              'Accept': 'application/vnd.github.v3+json',
+              'Accept': 'application/json',
               'User-Agent': 'Video-Tasks-Manager'
             }
           }
         );
-
-        console.log('API Response Status:', response.status);
-        console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
-        
-        const responseText = await response.text();
-        console.log('API Response Body:', responseText);
 
         if (response.status === 404) {
           console.log('Datei existiert noch nicht');
@@ -779,17 +793,14 @@
         }
 
         if (!response.ok) {
-          throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
+          throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
         }
 
-        const data = JSON.parse(responseText);
-        console.log('Daten erfolgreich geladen, SHA:', data.sha);
-        return {
-          content: JSON.parse(atob(data.content)),
-          sha: data.sha
-        };
+        const content = await response.json();
+        console.log('Daten erfolgreich geladen');
+        return { content, sha: null }; // SHA wird nicht mehr benötigt
       } catch (error) {
-        console.error('Detaillierter Fehler beim Laden:', error);
+        console.error('Fehler beim Laden:', error);
         updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
         return null;
       }
@@ -855,67 +866,6 @@
       }
     }
 
-    async function updateFileContent(content, sha) {
-      const config = window.GITHUB_CONFIG;
-      try {
-        // Prüfe zuerst die Berechtigungen
-        await checkGitHubPermissions();
-
-        // Wenn keine SHA vorhanden ist, versuche sie zu holen
-        if (!sha) {
-          const existingData = await getFileContent();
-          if (existingData) {
-            sha = existingData.sha;
-            console.log('Gefundene SHA:', sha);
-          }
-        }
-
-        // Direkt versuchen, die data.json zu erstellen/aktualisieren
-        console.log('Versuche data.json zu erstellen/aktualisieren...');
-        console.log('Repository:', config.repo);
-        console.log('Token vorhanden:', !!config.token);
-        console.log('Verwende SHA:', sha || 'keine (neue Datei)');
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${config.token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json',
-              'User-Agent': 'Video-Tasks-Manager'
-            },
-            body: JSON.stringify({
-              message: 'Update tasks',
-              content: btoa(JSON.stringify(content, null, 2)),
-              sha: sha || null,
-              branch: 'main'  // Explizit den Branch angeben
-            })
-          }
-        );
-
-        console.log('API Response Status:', response.status);
-        console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
-        
-        const responseText = await response.text();
-        console.log('API Response Body:', responseText);
-
-        if (!response.ok) {
-          throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
-        }
-
-        const responseData = JSON.parse(responseText);
-        console.log('Daten erfolgreich gespeichert');
-        return true;
-      } catch (error) {
-        console.error('Detaillierter Fehler beim Speichern:', error);
-        updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
-        return false;
-      }
-    }
-
-    // Synchronisation
     async function syncTasks() {
       if (syncInProgress) return;
       syncInProgress = true;
@@ -935,7 +885,7 @@
           if (!Array.isArray(tasks)) {
             tasks = [];
           }
-          const success = await updateFileContent(tasks, null);
+          const success = await updateFileContent(tasks);
           if (success) {
             updateSyncStatus('success', 'Synchronisiert');
             return;
@@ -964,8 +914,8 @@
           tasks = mergedTasks;
           console.log('Nach Merge:', tasks.length, 'Tasks');
 
-          // Speichere aktualisierte Daten mit der bekannten SHA
-          const success = await updateFileContent(tasks, existingData.sha);
+          // Speichere aktualisierte Daten
+          const success = await updateFileContent(tasks);
           if (success) {
             updateSyncStatus('success', 'Synchronisiert');
             renderTasks();
