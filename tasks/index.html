@@ -1191,7 +1191,7 @@
                     const success = await updateFileContent(tasks, null);
                     if (success) {
                         updateSyncStatus('success', 'Synchronisiert');
-                        return;
+                        renderTasks();
                     }
                 } else {
                     // Wenn die Datei existiert, merge die Daten
@@ -1232,6 +1232,120 @@
             }
         }
 
+        // Funktion zum Rendern der Tasks
+        function renderTasks() {
+            const taskList = document.getElementById("taskList");
+            if (!taskList) return;
+            
+            taskList.innerHTML = "";
+
+            const filteredTasks = tasks.filter(task => {
+                switch (currentFilter) {
+                    case 'all':
+                        return !task.done; // Zeige nur aktive Aufgaben
+                    case 'active':
+                        return !task.done;
+                    case 'completed':
+                        return task.done;
+                    case 'urgent':
+                        return getTaskStatus(task) === 'urgent' && !task.done;
+                    default:
+                        return !task.done;
+                }
+            });
+
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list fa-3x"></i>
+                        <p>${currentFilter === 'completed' ? 'Keine erledigten Aufgaben' : 'Keine aktiven Aufgaben'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sortiere Tasks nach Deadline (dringendste zuerst)
+            filteredTasks.sort((a, b) => {
+                const dateA = new Date(a.deadline);
+                const dateB = new Date(b.deadline);
+                return dateA - dateB;
+            });
+
+            filteredTasks.forEach(task => {
+                const status = getTaskStatus(task);
+                const div = document.createElement("div");
+                div.className = `task ${status} ${task.done ? "completed" : ""}`;
+                
+                div.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-title">${task.client}</div>
+                        <div class="task-meta">
+                            <span><i class="fas fa-video"></i> ${task.videos} Videos</span>
+                            <span><i class="fas fa-calendar"></i> ${formatDate(task.deadline)}</span>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button onclick="toggleDone(${task.id})" class="btn ${task.done ? 'btn-danger' : 'btn-success'}">
+                            <i class="fas ${task.done ? 'fa-undo' : 'fa-check'}"></i>
+                            ${task.done ? 'Rückgängig' : 'Erledigt'}
+                        </button>
+                        <button onclick="deleteTask(${task.id})" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Löschen
+                        </button>
+                    </div>
+                `;
+                taskList.appendChild(div);
+            });
+        }
+
+        // Hilfsfunktionen für Tasks
+        function getTaskStatus(task) {
+            const deadlineDate = new Date(task.deadline);
+            const today = new Date();
+            const daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+            if (task.done) return 'completed';
+            if (daysLeft < 2) return 'urgent';
+            if (daysLeft < 7) return 'soon';
+            return 'normal';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('de-DE', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Task-Management Funktionen
+        function toggleDone(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.done = !task.done;
+                task.updatedAt = new Date().toISOString();
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        function saveTasks() {
+            tasks.forEach(task => {
+                if (!task.updatedAt) {
+                    task.updatedAt = new Date().toISOString();
+                }
+            });
+            syncTasks();
+        }
+
         // Mache Funktionen global verfügbar
         window.updateFormStatus = updateFormStatus;
         window.updateTokenStatus = updateTokenStatus;
@@ -1239,6 +1353,12 @@
         window.showGitHubConfig = showGitHubConfig;
         window.testGitHubAccess = testGitHubAccess;
         window.syncTasks = syncTasks;
+        window.renderTasks = renderTasks;
+        window.toggleDone = toggleDone;
+        window.deleteTask = deleteTask;
+        window.saveTasks = saveTasks;
+        window.getTaskStatus = getTaskStatus;
+        window.formatDate = formatDate;
 
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
