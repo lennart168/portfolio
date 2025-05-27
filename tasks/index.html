@@ -452,6 +452,7 @@
     <span>Nicht synchronisiert</span>
   </div>
 
+  <!-- GitHub Konfigurationsdialog -->
   <div id="overlay" class="overlay"></div>
   <div id="githubConfig" class="github-config">
     <h2>GitHub Konfiguration</h2>
@@ -459,10 +460,6 @@
       <label for="githubToken">GitHub Personal Access Token</label>
       <input type="password" id="githubToken" placeholder="ghp_..." />
       <small>Erstelle einen Token mit 'repo' Berechtigung unter GitHub Settings > Developer Settings > Personal Access Tokens</small>
-    </div>
-    <div class="form-group">
-      <label for="githubRepo">Repository (Format: username/repo)</label>
-      <input type="text" id="githubRepo" placeholder="username/repo" />
     </div>
     <div class="form-group">
       <button class="btn" onclick="saveGitHubConfig()">Speichern</button>
@@ -687,17 +684,43 @@
       }
     }
 
-    // Funktion zum Speichern des Tokens
+    // Funktion zum Anzeigen/Ausblenden des Konfigurationsdialogs
+    function showGitHubConfig(show = true) {
+      const config = document.getElementById('githubConfig');
+      const overlay = document.getElementById('overlay');
+      if (config && overlay) {
+        if (show) {
+          config.classList.add('active');
+          overlay.classList.add('active');
+        } else {
+          config.classList.remove('active');
+          overlay.classList.remove('active');
+        }
+      }
+    }
+
+    // Modifiziere die checkGitHubConfig Funktion
+    function checkGitHubConfig() {
+      if (!GITHUB_CONFIG.token) {
+        showGitHubConfig(true);
+        return false;
+      }
+      return true;
+    }
+
+    // Modifiziere die saveGitHubConfig Funktion
     function saveGitHubConfig() {
-      const token = document.getElementById('githubToken').value.trim();
+      const tokenInput = document.getElementById('githubToken');
+      if (!tokenInput) return;
+
+      const token = tokenInput.value.trim();
       if (!token) {
         alert('Bitte geben Sie einen Token ein');
         return;
       }
       
       GITHUB_CONFIG.token = token;
-      document.getElementById('githubConfig').classList.remove('active');
-      document.getElementById('overlay').classList.remove('active');
+      showGitHubConfig(false);
       
       // Teste den Token
       testGitHubAccess().then(() => {
@@ -707,19 +730,8 @@
       }).catch(error => {
         updateSyncStatus('error', `Token ungültig: ${error.message}`);
         // Zeige den Konfigurationsdialog wieder an
-        document.getElementById('githubConfig').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
+        showGitHubConfig(true);
       });
-    }
-
-    // Zeige den Konfigurationsdialog, wenn kein Token vorhanden ist
-    function checkGitHubConfig() {
-      if (!GITHUB_CONFIG.token) {
-        document.getElementById('githubConfig').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
-        return false;
-      }
-      return true;
     }
 
     // Modifiziere die updateFileContent Funktion
@@ -959,12 +971,13 @@
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.body.setAttribute('data-theme', savedTheme);
       const icon = document.querySelector('.theme-toggle i');
-      icon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+      if (icon) {
+        icon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+      }
 
       // Prüfe, ob ein Token vorhanden ist
       if (!GITHUB_CONFIG.token) {
-        document.getElementById('githubConfig').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
+        showGitHubConfig(true);
         return;
       }
 
@@ -982,8 +995,7 @@
         console.error('Initialisierungsfehler:', error);
         updateSyncStatus('error', `Initialisierungsfehler: ${error.message}`);
         // Zeige den Konfigurationsdialog an
-        document.getElementById('githubConfig').classList.add('active');
-        document.getElementById('overlay').classList.add('active');
+        showGitHubConfig(true);
       }
     });
   </script>
