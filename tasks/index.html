@@ -1242,7 +1242,7 @@
             const filteredTasks = tasks.filter(task => {
                 switch (currentFilter) {
                     case 'all':
-                        return !task.done; // Zeige nur aktive Aufgaben
+                        return !task.done;
                     case 'active':
                         return !task.done;
                     case 'completed':
@@ -1285,16 +1285,32 @@
                         </div>
                     </div>
                     <div class="task-actions">
-                        <button onclick="toggleDone(${task.id})" class="btn ${task.done ? 'btn-danger' : 'btn-success'}">
+                        <button class="btn ${task.done ? 'btn-danger' : 'btn-success'} toggle-done" data-task-id="${task.id}">
                             <i class="fas ${task.done ? 'fa-undo' : 'fa-check'}"></i>
                             ${task.done ? 'Rückgängig' : 'Erledigt'}
                         </button>
-                        <button onclick="deleteTask(${task.id})" class="btn btn-danger">
+                        <button class="btn btn-danger delete-task" data-task-id="${task.id}">
                             <i class="fas fa-trash"></i> Löschen
                         </button>
                     </div>
                 `;
                 taskList.appendChild(div);
+            });
+
+            // Event-Listener für Löschen-Buttons
+            taskList.querySelectorAll('.delete-task').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const taskId = parseInt(event.currentTarget.dataset.taskId);
+                    deleteTask(taskId);
+                });
+            });
+
+            // Event-Listener für Toggle-Buttons
+            taskList.querySelectorAll('.toggle-done').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const taskId = parseInt(event.currentTarget.dataset.taskId);
+                    toggleDone(taskId);
+                });
             });
         }
 
@@ -1330,16 +1346,18 @@
         }
 
         async function deleteTask(taskId) {
+            console.log('Lösche Task:', taskId); // Debug-Log
             if (!confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
                 return;
             }
 
             try {
-                // Aktualisiere den Sync-Status
                 updateSyncStatus('syncing', 'Lösche Aufgabe...');
-
+                console.log('Vor dem Löschen - Tasks:', tasks); // Debug-Log
+                
                 // Entferne die Task aus dem Array
                 tasks = tasks.filter(t => t.id !== taskId);
+                console.log('Nach dem Löschen - Tasks:', tasks); // Debug-Log
                 
                 // Speichere und synchronisiere die Änderungen
                 await saveTasks();
@@ -1347,10 +1365,8 @@
                 // Aktualisiere die Anzeige
                 renderTasks();
                 
-                // Zeige Erfolgsmeldung
                 updateSyncStatus('success', 'Aufgabe gelöscht');
                 
-                // Verstecke die Erfolgsmeldung nach 3 Sekunden
                 setTimeout(() => {
                     const syncStatus = document.getElementById('syncStatus');
                     if (syncStatus) {
