@@ -469,20 +469,12 @@
     </div>
   </div>
 
+  <!-- Konfiguration einbinden -->
+  <script src="config.js"></script>
   <script>
     let tasks = [];
     let currentFilter = 'all';
     let syncInProgress = false;
-    const GITHUB_CONFIG_KEY = 'githubConfig';
-    const GITHUB_CONFIG = {
-      token: "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",
-      repo: "lennart168/portfolio"
-    };
-
-    // Speichere die Konfiguration einmalig
-    if (!localStorage.getItem(GITHUB_CONFIG_KEY)) {
-      localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(GITHUB_CONFIG));
-    }
 
     // Entferne den Konfigurationsdialog und Overlay
     document.getElementById('overlay')?.remove();
@@ -833,9 +825,6 @@
         <span>${message}</span>
       `;
     }
-
-    // Entferne die Konfigurations-Event-Listener
-    document.removeEventListener('keydown', showGitHubConfig);
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
