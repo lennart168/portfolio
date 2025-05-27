@@ -680,18 +680,16 @@
       });
 
       // GitHub API Funktionen
-      async function testGitHubAccess() {
+      async function getFileContent() {
         if (!GITHUB_CONFIG.token) {
           throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
         }
         try {
-          console.log('Teste GitHub-Zugriff...');
+          console.log('Lade Daten von GitHub...');
           const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
-          console.log('Repository:', repoPath);
           
-          // Teste Repository-Zugriff
           const response = await fetch(
-            `https://api.github.com/repos/${repoPath}`,
+            `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
             {
               headers: {
                 'Accept': 'application/vnd.github.v3+json',
@@ -701,212 +699,242 @@
             }
           );
 
-          console.log('Repository Test Status:', response.status);
-          const responseText = await response.text();
-          console.log('Repository Test Response:', responseText);
+          if (response.status === 404) {
+            console.log('Datei existiert noch nicht');
+            return null;
+          }
 
           if (!response.ok) {
-            throw new Error(`Repository nicht gefunden (${response.status}): ${responseText}`);
+            throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
           }
 
-          // Teste tasks-Ordner-Zugriff
-          const tasksResponse = await fetch(
-            `https://api.github.com/repos/${repoPath}/contents/tasks`,
+          const data = await response.json();
+          console.log('Daten erfolgreich geladen, SHA:', data.sha);
+          return {
+            content: JSON.parse(atob(data.content)),
+            sha: data.sha
+          };
+        } catch (error) {
+          console.error('Fehler beim Laden:', error);
+          updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
+          return null;
+        }
+      }
+
+      async function updateFileContent(content, sha) {
+        if (!GITHUB_CONFIG.token) {
+          throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+        }
+        try {
+          console.log('Aktualisiere Daten auf GitHub...');
+          const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+          
+          // Wenn keine SHA vorhanden ist, versuche sie zu holen
+          if (!sha) {
+            const existingData = await getFileContent();
+            if (existingData) {
+              sha = existingData.sha;
+              console.log('Gefundene SHA:', sha);
+            }
+          }
+
+          const response = await fetch(
+            `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
             {
+              method: 'PUT',
               headers: {
                 'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json',
                 'Authorization': `token ${GITHUB_CONFIG.token}`,
                 'User-Agent': 'Video-Tasks-Manager'
-              }
+              },
+              body: JSON.stringify({
+                message: 'Update tasks',
+                content: btoa(JSON.stringify(content, null, 2)),
+                sha: sha || null,
+                branch: 'main'
+              })
             }
           );
 
-          console.log('Tasks-Ordner Test Status:', tasksResponse.status);
-          const tasksResponseText = await tasksResponse.text();
-          console.log('Tasks-Ordner Test Response:', tasksResponseText);
+          console.log('GitHub API Response Status:', response.status);
+          const responseText = await response.text();
+          console.log('GitHub API Response:', responseText);
 
-          if (!tasksResponse.ok && tasksResponse.status !== 404) {
-            throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
+          if (!response.ok) {
+            if (response.status === 401) {
+              throw new Error('Ungültiger Token. Bitte erstellen Sie einen neuen Token mit "repo" Scope.');
+            }
+            throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
           }
 
-          return {
-            repositoryAccess: response.ok,
-            tasksFolderExists: tasksResponse.ok
-          };
+          console.log('Daten erfolgreich aktualisiert');
+          return true;
         } catch (error) {
-          console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
-          throw error;
+          console.error('Fehler beim Aktualisieren:', error);
+          updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
+          return false;
         }
       }
 
-      // Funktion zum Aktualisieren des Token-Status
-      function updateTokenStatus(message, isValid = null) {
-        if (!tokenStatus || !tokenError) return;
-        
-        tokenStatus.textContent = message;
-        tokenStatus.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
-        
-        tokenError.textContent = isValid === false ? message : '';
-        tokenError.className = 'error-message' + (isValid === false ? ' active' : '');
-      }
+      async function syncTasks() {
+        if (syncInProgress) return;
+        syncInProgress = true;
+        updateSyncStatus('syncing', 'Synchronisiere...');
 
-      // Funktion zum Aktualisieren des Sync-Status
-      function updateSyncStatus(status, message) {
-        const syncStatus = document.getElementById('syncStatus');
-        if (!syncStatus) return;
-        
-        syncStatus.className = `sync-status ${status}`;
-        syncStatus.innerHTML = `
-          <i class="fas fa-${status === 'syncing' ? 'sync fa-spin' : 
-                          status === 'error' ? 'exclamation-circle' : 
-                          'check-circle'}"></i>
-          <span>${message}</span>
-        `;
-      }
+        try {
+          // Versuche zuerst, die Datei zu erstellen, wenn sie nicht existiert
+          const existingData = await getFileContent();
+          console.log('Vorhandene Daten:', existingData ? 'Ja' : 'Nein');
+          
+          if (!existingData) {
+            console.log('Erstelle neue Datei mit', tasks.length, 'Tasks');
+            // Stelle sicher, dass wir ein leeres Array haben, wenn keine Tasks vorhanden sind
+            if (!Array.isArray(tasks)) {
+              tasks = [];
+            }
+            const success = await updateFileContent(tasks, null);
+            if (success) {
+              updateSyncStatus('success', 'Synchronisiert');
+              return;
+            }
+          } else {
+            // Wenn die Datei existiert, merge die Daten
+            const remoteTasks = existingData.content;
+            console.log('Remote Tasks:', remoteTasks.length);
+            console.log('Lokale Tasks:', tasks.length);
+            
+            // Stelle sicher, dass remoteTasks ein Array ist
+            const mergedTasks = Array.isArray(remoteTasks) ? [...remoteTasks] : [];
+            
+            // Füge neue lokale Tasks hinzu
+            if (Array.isArray(tasks)) {
+              tasks.forEach(localTask => {
+                const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
+                if (existingIndex === -1) {
+                  mergedTasks.push(localTask);
+                } else if (localTask.updatedAt > mergedTasks[existingIndex].updatedAt) {
+                  mergedTasks[existingIndex] = localTask;
+                }
+              });
+            }
 
-      // Event-Listener für den Save-Button
-      if (saveButton) {
-        saveButton.addEventListener('click', function() {
-          if (!tokenInput) return;
+            tasks = mergedTasks;
+            console.log('Nach Merge:', tasks.length, 'Tasks');
 
-          const token = tokenInput.value.trim();
-          if (!token) {
-            updateTokenStatus('Bitte geben Sie einen Token ein', false);
-            return;
+            // Speichere aktualisierte Daten mit der bekannten SHA
+            const success = await updateFileContent(tasks, existingData.sha);
+            if (success) {
+              updateSyncStatus('success', 'Synchronisiert');
+              renderTasks();
+            }
           }
-
-          updateTokenStatus('Teste Token...');
-          GITHUB_CONFIG.token = token;
-
-          testGitHubAccess()
-            .then(() => {
-              updateTokenStatus('Token gültig', true);
-              showGitHubConfig(false);
-              updateFormStatus();
-              updateSyncStatus('success', 'Token gespeichert');
-              syncTasks();
-            })
-            .catch(error => {
-              updateTokenStatus('Token ungültig', false);
-              updateSyncStatus('error', `Token ungültig: ${error.message}`);
-            });
-        });
+        } catch (error) {
+          console.error('Synchronisationsfehler:', error);
+          updateSyncStatus('error', `Synchronisationsfehler: ${error.message}`);
+        } finally {
+          syncInProgress = false;
+        }
       }
 
-      // Event-Listener für Enter-Taste im Token-Input
-      if (tokenInput) {
-        tokenInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            saveGitHubConfig();
-          }
-        });
-      }
-
-      // Event-Listener für Overlay-Click
-      if (overlay) {
-        overlay.addEventListener('click', function() {
-          if (GITHUB_CONFIG.token) {
-            showGitHubConfig(false);
-          }
-        });
-      }
-
-      // Event-Listener für Config-Button
-      if (configButton) {
-        configButton.addEventListener('click', function() {
-          showGitHubConfig(true);
-        });
-      }
-
-      // Funktion zum Anzeigen/Ausblenden des Dialogs
-      function showGitHubConfig(show = true) {
-        console.log('Zeige GitHub Konfiguration:', show);
+      // Funktion zum Rendern der Tasks
+      function renderTasks() {
+        const taskList = document.getElementById("taskList");
+        if (!taskList) return;
         
-        if (!configDialog || !overlay) {
-          console.error('Dialog oder Overlay nicht gefunden!');
+        taskList.innerHTML = "";
+
+        const filteredTasks = tasks.filter(task => {
+          if (currentFilter === 'all') return true;
+          if (currentFilter === 'active') return !task.done;
+          if (currentFilter === 'completed') return task.done;
+          if (currentFilter === 'urgent') return getTaskStatus(task) === 'urgent' && !task.done;
+          return true;
+        });
+
+        if (filteredTasks.length === 0) {
+          taskList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-clipboard-list fa-3x"></i>
+              <p>Keine Aufgaben gefunden</p>
+            </div>
+          `;
           return;
         }
 
-        if (show) {
-          configDialog.style.display = 'block';
-          overlay.style.display = 'block';
-          if (tokenInput) {
-            tokenInput.focus();
-            tokenInput.value = '';
-          }
-          if (configButton) {
-            configButton.classList.add('active');
-          }
-        } else {
-          configDialog.style.display = 'none';
-          overlay.style.display = 'none';
-          if (configButton) {
-            configButton.classList.remove('active');
-          }
+        filteredTasks.forEach(task => {
+          const status = getTaskStatus(task);
+          const div = document.createElement("div");
+          div.className = `task ${status} ${task.done ? "completed" : ""}`;
+          
+          div.innerHTML = `
+            <div class="task-header">
+              <div class="task-title">${task.client}</div>
+              <div class="task-meta">
+                <span><i class="fas fa-video"></i> ${task.videos} Videos</span>
+                <span><i class="fas fa-calendar"></i> ${formatDate(task.deadline)}</span>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button onclick="toggleDone(${task.id})" class="btn ${task.done ? 'btn-danger' : 'btn-success'}">
+                <i class="fas ${task.done ? 'fa-undo' : 'fa-check'}"></i>
+                ${task.done ? 'Rückgängig' : 'Erledigt'}
+              </button>
+              <button onclick="deleteTask(${task.id})" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Löschen
+              </button>
+            </div>
+          `;
+          taskList.appendChild(div);
+        });
+      }
+
+      // Hilfsfunktionen für Tasks
+      function getTaskStatus(task) {
+        const deadlineDate = new Date(task.deadline);
+        const today = new Date();
+        const daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+        if (task.done) return 'completed';
+        if (daysLeft < 2) return 'urgent';
+        if (daysLeft < 7) return 'soon';
+        return 'normal';
+      }
+
+      function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('de-DE', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+
+      // Task-Management Funktionen
+      function toggleDone(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          task.done = !task.done;
+          task.updatedAt = new Date().toISOString();
+          saveTasks();
+          renderTasks();
         }
       }
 
-      // Funktion zum Speichern des Tokens
-      function saveGitHubConfig() {
-        if (!tokenInput) return;
-
-        const token = tokenInput.value.trim();
-        if (!token) {
-          updateTokenStatus('Bitte geben Sie einen Token ein', false);
-          return;
+      function deleteTask(taskId) {
+        if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+          tasks = tasks.filter(t => t.id !== taskId);
+          saveTasks();
+          renderTasks();
         }
-
-        updateTokenStatus('Teste Token...');
-        GITHUB_CONFIG.token = token;
-
-        testGitHubAccess()
-          .then(() => {
-            updateTokenStatus('Token gültig', true);
-            showGitHubConfig(false);
-            updateFormStatus();
-            updateSyncStatus('success', 'Token gespeichert');
-            syncTasks();
-          })
-          .catch(error => {
-            updateTokenStatus('Token ungültig', false);
-            updateSyncStatus('error', `Token ungültig: ${error.message}`);
-          });
       }
 
-      // Funktion zum Aktualisieren des Formular-Status
-      function updateFormStatus() {
-        if (!taskForm || !configButton) return;
-
-        if (!GITHUB_CONFIG.token) {
-          taskForm.classList.add('disabled');
-          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
-          configButton.classList.add('btn-danger');
-          if (!configDialog.classList.contains('active')) {
-            showGitHubConfig(true);
+      function saveTasks() {
+        tasks.forEach(task => {
+          if (!task.updatedAt) {
+            task.updatedAt = new Date().toISOString();
           }
-        } else {
-          taskForm.classList.remove('disabled');
-          updateTokenStatus('Token konfiguriert', true);
-          configButton.classList.remove('btn-danger');
-          configButton.classList.add('btn-success');
-        }
-      }
-
-      // Initialisierung
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.body.setAttribute('data-theme', savedTheme);
-      
-      const themeIcon = document.querySelector('.theme-toggle i');
-      if (themeIcon) {
-        themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-      }
-
-      // Prüfe Token und zeige Dialog
-      if (!GITHUB_CONFIG.token) {
-        console.log('Kein Token gefunden, zeige Dialog...');
-        setTimeout(() => showGitHubConfig(true), 100);
-      } else {
-        updateFormStatus();
+        });
+        syncTasks();
       }
 
       // Mache Funktionen global verfügbar
@@ -917,6 +945,22 @@
       window.showClientSuggestions = showClientSuggestions;
       window.selectClient = selectClient;
       window.testGitHubAccess = testGitHubAccess;
+      window.syncTasks = syncTasks;
+      window.renderTasks = renderTasks;
+      window.toggleDone = toggleDone;
+      window.deleteTask = deleteTask;
+      window.saveTasks = saveTasks;
+      window.getTaskStatus = getTaskStatus;
+      window.formatDate = formatDate;
+
+      // Initialisiere die Anwendung
+      if (!GITHUB_CONFIG.token) {
+        console.log('Kein Token gefunden, zeige Dialog...');
+        setTimeout(() => showGitHubConfig(true), 100);
+      } else {
+        updateFormStatus();
+        syncTasks(); // Lade initial die Tasks
+      }
     });
   </script>
 </body>
