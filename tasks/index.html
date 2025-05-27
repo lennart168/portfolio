@@ -477,6 +477,35 @@
   </style>
 </head>
 <body data-theme="light">
+  <!-- GitHub Konfigurationsdialog muss VOR dem Container sein -->
+  <div id="overlay" class="overlay" onclick="if(GITHUB_CONFIG.token) showGitHubConfig(false)"></div>
+  <div id="githubConfig" class="github-config">
+    <h2>GitHub Konfiguration</h2>
+    <div class="form-group">
+      <label for="githubToken">GitHub Personal Access Token</label>
+      <input 
+        type="password" 
+        id="githubToken" 
+        placeholder="ghp_..." 
+        autocomplete="off"
+        onkeydown="if(event.key === 'Enter') saveGitHubConfig()"
+      />
+      <small>
+        Erstelle einen Token mit 'repo' Berechtigung unter 
+        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+          GitHub Settings > Developer Settings > Personal Access Tokens
+        </a>
+      </small>
+      <div class="token-status" id="tokenStatus"></div>
+    </div>
+    <div class="error-message" id="tokenError"></div>
+    <div class="form-group">
+      <button class="btn" onclick="saveGitHubConfig()">
+        <i class="fas fa-save"></i> Token speichern
+      </button>
+    </div>
+  </div>
+
   <div class="container">
     <header>
       <h1>🎬 Video-Deadline-Manager</h1>
@@ -535,35 +564,6 @@
   <div id="syncStatus" class="sync-status">
     <i class="fas fa-sync"></i>
     <span>Nicht synchronisiert</span>
-  </div>
-
-  <!-- GitHub Konfigurationsdialog -->
-  <div id="overlay" class="overlay" onclick="if(GITHUB_CONFIG.token) showGitHubConfig(false)"></div>
-  <div id="githubConfig" class="github-config">
-    <h2>GitHub Konfiguration</h2>
-    <div class="form-group">
-      <label for="githubToken">GitHub Personal Access Token</label>
-      <input 
-        type="password" 
-        id="githubToken" 
-        placeholder="ghp_..." 
-        autocomplete="off"
-        onkeydown="if(event.key === 'Enter') saveGitHubConfig()"
-      />
-      <small>
-        Erstelle einen Token mit 'repo' Berechtigung unter 
-        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
-          GitHub Settings > Developer Settings > Personal Access Tokens
-        </a>
-      </small>
-      <div class="token-status" id="tokenStatus"></div>
-    </div>
-    <div class="error-message" id="tokenError"></div>
-    <div class="form-group">
-      <button class="btn" onclick="saveGitHubConfig()">
-        <i class="fas fa-save"></i> Token speichern
-      </button>
-    </div>
   </div>
 
   <!-- Konfiguration für GitHub Actions -->
@@ -789,20 +789,33 @@
       }
     }
 
+    // Füge die fehlende checkGitHubConfig Funktion hinzu
+    function checkGitHubConfig() {
+      if (!GITHUB_CONFIG.token) {
+        showGitHubConfig(true);
+        return false;
+      }
+      return true;
+    }
+
     // Modifiziere die showGitHubConfig Funktion
     function showGitHubConfig(show = true) {
-      console.log('Zeige GitHub Konfiguration:', show); // Debug-Log
+      console.log('Zeige GitHub Konfiguration:', show);
       const config = document.getElementById('githubConfig');
       const overlay = document.getElementById('overlay');
       const configButton = document.getElementById('configButton');
       
       if (!config || !overlay) {
-        console.error('Konfigurationsdialog oder Overlay nicht gefunden!'); // Debug-Log
+        console.error('Konfigurationsdialog oder Overlay nicht gefunden!');
+        console.log('Dialog Element:', config);
+        console.log('Overlay Element:', overlay);
         return;
       }
 
       if (show) {
+        config.style.display = 'block';
         config.classList.add('active');
+        overlay.style.display = 'block';
         overlay.classList.add('active');
         if (configButton) {
           configButton.classList.add('active');
@@ -814,7 +827,9 @@
           tokenInput.value = ''; // Lösche alten Token
         }
       } else {
+        config.style.display = 'none';
         config.classList.remove('active');
+        overlay.style.display = 'none';
         overlay.classList.remove('active');
         if (configButton) {
           configButton.classList.remove('active');
@@ -832,7 +847,10 @@
           form.classList.add('disabled');
           updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
           configButton.classList.add('btn-danger');
-          showGitHubConfig(true); // Zeige den Dialog automatisch
+          // Zeige den Dialog nur, wenn er noch nicht sichtbar ist
+          if (!document.getElementById('githubConfig').classList.contains('active')) {
+            showGitHubConfig(true);
+          }
         } else {
           form.classList.remove('disabled');
           updateTokenStatus('Token konfiguriert', true);
@@ -1129,6 +1147,20 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('DOM geladen, prüfe Konfigurationsdialog...');
+      const config = document.getElementById('githubConfig');
+      const overlay = document.getElementById('overlay');
+      console.log('Dialog gefunden:', !!config);
+      console.log('Overlay gefunden:', !!overlay);
+      
+      // Stelle sicher, dass der Dialog initial versteckt ist
+      if (config) {
+        config.style.display = 'none';
+      }
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.body.setAttribute('data-theme', savedTheme);
       const icon = document.querySelector('.theme-toggle i');
@@ -1141,27 +1173,8 @@
 
       // Prüfe, ob ein Token vorhanden ist
       if (!GITHUB_CONFIG.token) {
-        console.log('Kein Token gefunden, zeige Dialog...'); // Debug-Log
-        showGitHubConfig(true);
-      }
-
-      try {
-        // Teste GitHub-Zugriff beim Start
-        await testGitHubAccess();
-        updateTokenStatus('Token gültig', true);
-        
-        // Lade initial Daten
-        const existingData = await getFileContent();
-        if (existingData) {
-          tasks = existingData.content;
-        }
-        renderTasks();
-      } catch (error) {
-        console.error('Initialisierungsfehler:', error);
-        updateSyncStatus('error', `Initialisierungsfehler: ${error.message}`);
-        updateTokenStatus('Token ungültig', false);
-        // Zeige den Konfigurationsdialog an
-        showGitHubConfig(true);
+        console.log('Kein Token gefunden, zeige Dialog...');
+        setTimeout(() => showGitHubConfig(true), 100); // Kleine Verzögerung
       }
     });
   </script>
