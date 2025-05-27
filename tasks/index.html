@@ -943,6 +943,142 @@
             themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
         }
 
+        // Hilfsfunktionen
+        function updateFormStatus() {
+            if (!taskForm || !configButton) return;
+
+            if (!GITHUB_CONFIG.token) {
+                taskForm.classList.add('disabled');
+                updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+                configButton.classList.add('btn-danger');
+                if (!configDialog.classList.contains('active')) {
+                    showGitHubConfig(true);
+                }
+            } else {
+                taskForm.classList.remove('disabled');
+                updateTokenStatus('Token konfiguriert', true);
+                configButton.classList.remove('btn-danger');
+                configButton.classList.add('btn-success');
+            }
+        }
+
+        function updateTokenStatus(message, isValid = null) {
+            if (!tokenStatus || !tokenError) return;
+            
+            tokenStatus.textContent = message;
+            tokenStatus.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
+            
+            tokenError.textContent = isValid === false ? message : '';
+            tokenError.className = 'error-message' + (isValid === false ? ' active' : '');
+        }
+
+        function updateSyncStatus(status, message) {
+            const syncStatus = document.getElementById('syncStatus');
+            if (!syncStatus) return;
+            
+            syncStatus.className = `sync-status ${status}`;
+            syncStatus.innerHTML = `
+                <i class="fas fa-${status === 'syncing' ? 'sync fa-spin' : 
+                                status === 'error' ? 'exclamation-circle' : 
+                                'check-circle'}"></i>
+                <span>${message}</span>
+            `;
+        }
+
+        function showGitHubConfig(show = true) {
+            console.log('Zeige GitHub Konfiguration:', show);
+            
+            if (!configDialog || !overlay) {
+                console.error('Dialog oder Overlay nicht gefunden!');
+                return;
+            }
+
+            if (show) {
+                configDialog.style.display = 'block';
+                overlay.style.display = 'block';
+                if (tokenInput) {
+                    tokenInput.focus();
+                    tokenInput.value = '';
+                }
+                if (configButton) {
+                    configButton.classList.add('active');
+                }
+            } else {
+                configDialog.style.display = 'none';
+                overlay.style.display = 'none';
+                if (configButton) {
+                    configButton.classList.remove('active');
+                }
+            }
+        }
+
+        // GitHub API Funktionen
+        async function testGitHubAccess() {
+            // ... existing testGitHubAccess code ...
+        }
+
+        async function getFileContent() {
+            // ... existing getFileContent code ...
+        }
+
+        async function updateFileContent(content, sha) {
+            // ... existing updateFileContent code ...
+        }
+
+        async function syncTasks() {
+            // ... existing syncTasks code ...
+        }
+
+        // Task-Management Funktionen
+        function renderTasks() {
+            // ... existing renderTasks code ...
+        }
+
+        function getTaskStatus(task) {
+            // ... existing getTaskStatus code ...
+        }
+
+        function formatDate(dateString) {
+            // ... existing formatDate code ...
+        }
+
+        function toggleDone(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.done = !task.done;
+                task.updatedAt = new Date().toISOString();
+                saveTasks().then(() => {
+                    renderTasks();
+                    updateSyncStatus('success', task.done ? 'Aufgabe erledigt' : 'Aufgabe wieder aktiviert');
+                }).catch(error => {
+                    console.error('Fehler beim Aktualisieren:', error);
+                    updateSyncStatus('error', `Fehler: ${error.message}`);
+                });
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks().then(() => {
+                    renderTasks();
+                    updateSyncStatus('success', 'Aufgabe gelöscht');
+                }).catch(error => {
+                    console.error('Fehler beim Löschen:', error);
+                    updateSyncStatus('error', `Fehler beim Löschen: ${error.message}`);
+                });
+            }
+        }
+
+        async function saveTasks() {
+            tasks.forEach(task => {
+                if (!task.updatedAt) {
+                    task.updatedAt = new Date().toISOString();
+                }
+            });
+            return syncTasks();
+        }
+
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
             if (!GITHUB_CONFIG.token) {
@@ -964,23 +1100,6 @@
             }
         }
 
-        // Starte die Initialisierung
-        await initializeApp();
-
-        // Task-Management Funktionen
-        function deleteTask(taskId) {
-            if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
-                tasks = tasks.filter(t => t.id !== taskId);
-                saveTasks().then(() => {
-                    renderTasks();
-                    updateSyncStatus('success', 'Aufgabe gelöscht');
-                }).catch(error => {
-                    console.error('Fehler beim Löschen:', error);
-                    updateSyncStatus('error', `Fehler beim Löschen: ${error.message}`);
-                });
-            }
-        }
-
         // Mache Funktionen global verfügbar
         window.deleteTask = deleteTask;
         window.toggleDone = toggleDone;
@@ -997,7 +1116,11 @@
         window.testGitHubAccess = testGitHubAccess;
         window.syncTasks = syncTasks;
 
-        // ... rest of the existing event listeners and functions ...
+        // Event-Listener
+        // ... existing event listeners ...
+
+        // Starte die Initialisierung
+        await initializeApp();
     });
   </script>
 </body>
