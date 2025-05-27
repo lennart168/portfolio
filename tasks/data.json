@@ -22,9 +22,9 @@
     "client": "hallo",
     "videos": 75,
     "deadline": "2025-05-27",
-    "done": false,
+    "done": true,
     "createdAt": "2025-05-27T21:35:43.436Z",
-    "updatedAt": "2025-05-27T21:35:43.436Z"
+    "updatedAt": "2025-05-27T21:51:50.500Z"
   },
   {
     "id": 1748381753559,
