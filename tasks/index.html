@@ -1015,6 +1015,231 @@
             }
         }
 
+        // GitHub API Funktionen
+        async function testGitHubAccess() {
+            if (!GITHUB_CONFIG.token) {
+                throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+            }
+            try {
+                console.log('Teste GitHub-Zugriff...');
+                const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+                console.log('Repository:', repoPath);
+                
+                // Teste Repository-Zugriff
+                const response = await fetch(
+                    `https://api.github.com/repos/${repoPath}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${GITHUB_CONFIG.token}`,
+                            'User-Agent': 'Video-Tasks-Manager'
+                        }
+                    }
+                );
+
+                console.log('Repository Test Status:', response.status);
+                const responseText = await response.text();
+                console.log('Repository Test Response:', responseText);
+
+                if (!response.ok) {
+                    throw new Error(`Repository nicht gefunden (${response.status}): ${responseText}`);
+                }
+
+                // Teste tasks-Ordner-Zugriff
+                const tasksResponse = await fetch(
+                    `https://api.github.com/repos/${repoPath}/contents/tasks`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${GITHUB_CONFIG.token}`,
+                            'User-Agent': 'Video-Tasks-Manager'
+                        }
+                    }
+                );
+
+                console.log('Tasks-Ordner Test Status:', tasksResponse.status);
+                const tasksResponseText = await tasksResponse.text();
+                console.log('Tasks-Ordner Test Response:', tasksResponseText);
+
+                if (!tasksResponse.ok && tasksResponse.status !== 404) {
+                    throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
+                }
+
+                return {
+                    repositoryAccess: response.ok,
+                    tasksFolderExists: tasksResponse.ok
+                };
+            } catch (error) {
+                console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
+                throw error;
+            }
+        }
+
+        async function getFileContent() {
+            if (!GITHUB_CONFIG.token) {
+                throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+            }
+            try {
+                console.log('Lade Daten von GitHub...');
+                const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+                
+                const response = await fetch(
+                    `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${GITHUB_CONFIG.token}`,
+                            'User-Agent': 'Video-Tasks-Manager'
+                        }
+                    }
+                );
+
+                if (response.status === 404) {
+                    console.log('Datei existiert noch nicht');
+                    return null;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
+                }
+
+                const data = await response.json();
+                console.log('Daten erfolgreich geladen, SHA:', data.sha);
+                return {
+                    content: JSON.parse(atob(data.content)),
+                    sha: data.sha
+                };
+            } catch (error) {
+                console.error('Fehler beim Laden:', error);
+                updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function updateFileContent(content, sha) {
+            if (!GITHUB_CONFIG.token) {
+                throw new Error('Bitte konfigurieren Sie zuerst den GitHub Token');
+            }
+            try {
+                console.log('Aktualisiere Daten auf GitHub...');
+                const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+                
+                // Wenn keine SHA vorhanden ist, versuche sie zu holen
+                if (!sha) {
+                    const existingData = await getFileContent();
+                    if (existingData) {
+                        sha = existingData.sha;
+                        console.log('Gefundene SHA:', sha);
+                    }
+                }
+
+                const response = await fetch(
+                    `https://api.github.com/repos/${repoPath}/contents/tasks/data.json`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json',
+                            'Authorization': `token ${GITHUB_CONFIG.token}`,
+                            'User-Agent': 'Video-Tasks-Manager'
+                        },
+                        body: JSON.stringify({
+                            message: 'Update tasks',
+                            content: btoa(JSON.stringify(content, null, 2)),
+                            sha: sha || null,
+                            branch: 'main'
+                        })
+                    }
+                );
+
+                console.log('GitHub API Response Status:', response.status);
+                const responseText = await response.text();
+                console.log('GitHub API Response:', responseText);
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Ungültiger Token. Bitte erstellen Sie einen neuen Token mit "repo" Scope.');
+                    }
+                    throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
+                }
+
+                console.log('Daten erfolgreich aktualisiert');
+                return true;
+            } catch (error) {
+                console.error('Fehler beim Aktualisieren:', error);
+                updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function syncTasks() {
+            if (syncInProgress) return;
+            syncInProgress = true;
+            updateSyncStatus('syncing', 'Synchronisiere...');
+
+            try {
+                // Versuche zuerst, die Datei zu erstellen, wenn sie nicht existiert
+                const existingData = await getFileContent();
+                console.log('Vorhandene Daten:', existingData ? 'Ja' : 'Nein');
+                
+                if (!existingData) {
+                    console.log('Erstelle neue Datei mit', tasks.length, 'Tasks');
+                    // Stelle sicher, dass wir ein leeres Array haben, wenn keine Tasks vorhanden sind
+                    if (!Array.isArray(tasks)) {
+                        tasks = [];
+                    }
+                    const success = await updateFileContent(tasks, null);
+                    if (success) {
+                        updateSyncStatus('success', 'Synchronisiert');
+                        return;
+                    }
+                } else {
+                    // Wenn die Datei existiert, merge die Daten
+                    const remoteTasks = existingData.content;
+                    console.log('Remote Tasks:', remoteTasks.length);
+                    console.log('Lokale Tasks:', tasks.length);
+                    
+                    // Stelle sicher, dass remoteTasks ein Array ist
+                    const mergedTasks = Array.isArray(remoteTasks) ? [...remoteTasks] : [];
+                    
+                    // Füge neue lokale Tasks hinzu
+                    if (Array.isArray(tasks)) {
+                        tasks.forEach(localTask => {
+                            const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
+                            if (existingIndex === -1) {
+                                mergedTasks.push(localTask);
+                            } else if (localTask.updatedAt > mergedTasks[existingIndex].updatedAt) {
+                                mergedTasks[existingIndex] = localTask;
+                            }
+                        });
+                    }
+
+                    tasks = mergedTasks;
+                    console.log('Nach Merge:', tasks.length, 'Tasks');
+
+                    // Speichere aktualisierte Daten mit der bekannten SHA
+                    const success = await updateFileContent(tasks, existingData.sha);
+                    if (success) {
+                        updateSyncStatus('success', 'Synchronisiert');
+                        renderTasks();
+                    }
+                }
+            } catch (error) {
+                console.error('Synchronisationsfehler:', error);
+                updateSyncStatus('error', `Synchronisationsfehler: ${error.message}`);
+            } finally {
+                syncInProgress = false;
+            }
+        }
+
+        // Mache Funktionen global verfügbar
+        window.updateFormStatus = updateFormStatus;
+        window.updateTokenStatus = updateTokenStatus;
+        window.updateSyncStatus = updateSyncStatus;
+        window.showGitHubConfig = showGitHubConfig;
+        window.testGitHubAccess = testGitHubAccess;
+        window.syncTasks = syncTasks;
+
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
             if (!GITHUB_CONFIG.token) {
@@ -1035,12 +1260,6 @@
                 }
             }
         }
-
-        // Mache Funktionen global verfügbar
-        window.updateFormStatus = updateFormStatus;
-        window.updateTokenStatus = updateTokenStatus;
-        window.updateSyncStatus = updateSyncStatus;
-        window.showGitHubConfig = showGitHubConfig;
 
         // Starte die Initialisierung
         await initializeApp();
