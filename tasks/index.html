@@ -896,7 +896,12 @@
 
   <!-- Hauptskript -->
   <script>
-    // Initialisiere die Anwendung
+    // Globale Variablen
+    let tasks = [];
+    let currentFilter = 'all';
+    let syncInProgress = false;
+
+    // Warte bis das DOM vollständig geladen ist
     document.addEventListener('DOMContentLoaded', async function() {
         console.log('DOM geladen, initialisiere Anwendung...');
         
@@ -938,6 +943,78 @@
             themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
         }
 
+        // Funktion zum Aktualisieren des Formular-Status
+        function updateFormStatus() {
+            if (!taskForm || !configButton) return;
+
+            if (!GITHUB_CONFIG.token) {
+                taskForm.classList.add('disabled');
+                updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+                configButton.classList.add('btn-danger');
+                if (!configDialog.classList.contains('active')) {
+                    showGitHubConfig(true);
+                }
+            } else {
+                taskForm.classList.remove('disabled');
+                updateTokenStatus('Token konfiguriert', true);
+                configButton.classList.remove('btn-danger');
+                configButton.classList.add('btn-success');
+            }
+        }
+
+        // Funktion zum Aktualisieren des Token-Status
+        function updateTokenStatus(message, isValid = null) {
+            if (!tokenStatus || !tokenError) return;
+            
+            tokenStatus.textContent = message;
+            tokenStatus.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
+            
+            tokenError.textContent = isValid === false ? message : '';
+            tokenError.className = 'error-message' + (isValid === false ? ' active' : '');
+        }
+
+        // Funktion zum Aktualisieren des Sync-Status
+        function updateSyncStatus(status, message) {
+            const syncStatus = document.getElementById('syncStatus');
+            if (!syncStatus) return;
+            
+            syncStatus.className = `sync-status ${status}`;
+            syncStatus.innerHTML = `
+                <i class="fas fa-${status === 'syncing' ? 'sync fa-spin' : 
+                                status === 'error' ? 'exclamation-circle' : 
+                                'check-circle'}"></i>
+                <span>${message}</span>
+            `;
+        }
+
+        // Funktion zum Anzeigen/Ausblenden des Dialogs
+        function showGitHubConfig(show = true) {
+            console.log('Zeige GitHub Konfiguration:', show);
+            
+            if (!configDialog || !overlay) {
+                console.error('Dialog oder Overlay nicht gefunden!');
+                return;
+            }
+
+            if (show) {
+                configDialog.style.display = 'block';
+                overlay.style.display = 'block';
+                if (tokenInput) {
+                    tokenInput.focus();
+                    tokenInput.value = '';
+                }
+                if (configButton) {
+                    configButton.classList.add('active');
+                }
+            } else {
+                configDialog.style.display = 'none';
+                overlay.style.display = 'none';
+                if (configButton) {
+                    configButton.classList.remove('active');
+                }
+            }
+        }
+
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
             if (!GITHUB_CONFIG.token) {
@@ -950,7 +1027,7 @@
                 try {
                     updateSyncStatus('syncing', 'Lade Aufgaben...');
                     await syncTasks();
-        renderTasks();
+                    renderTasks();
                     updateSyncStatus('success', 'Synchronisiert');
                 } catch (error) {
                     console.error('Fehler bei der initialen Synchronisation:', error);
@@ -958,6 +1035,12 @@
                 }
             }
         }
+
+        // Mache Funktionen global verfügbar
+        window.updateFormStatus = updateFormStatus;
+        window.updateTokenStatus = updateTokenStatus;
+        window.updateSyncStatus = updateSyncStatus;
+        window.showGitHubConfig = showGitHubConfig;
 
         // Starte die Initialisierung
         await initializeApp();
