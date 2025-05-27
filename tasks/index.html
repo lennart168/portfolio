@@ -479,22 +479,14 @@
       repo: "lennart168/portfolio"
     };
 
-    // Initialisiere die Konfiguration
+    // Speichere die Konfiguration einmalig
     if (!localStorage.getItem(GITHUB_CONFIG_KEY)) {
       localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(GITHUB_CONFIG));
     }
 
-    // Entferne den Konfigurationsdialog und Overlay aus dem DOM
+    // Entferne den Konfigurationsdialog und Overlay
     document.getElementById('overlay')?.remove();
     document.getElementById('githubConfig')?.remove();
-
-    // Entferne die Tastenkombination
-    document.removeEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'G') {
-        e.preventDefault();
-        showGitHubConfig();
-      }
-    });
 
     // Funktion zum Aktualisieren der Kundenliste
     function updateClientList() {
@@ -687,36 +679,7 @@
       }
     }
 
-    // GitHub Konfiguration
-    function showGitHubConfig() {
-      document.getElementById('overlay').classList.add('active');
-      document.getElementById('githubConfig').classList.add('active');
-      
-      const config = JSON.parse(localStorage.getItem(GITHUB_CONFIG_KEY) || '{}');
-      document.getElementById('githubToken').value = config.token || '';
-      document.getElementById('githubRepo').value = config.repo || '';
-    }
-
-    function hideGitHubConfig() {
-      document.getElementById('overlay').classList.remove('active');
-      document.getElementById('githubConfig').classList.remove('active');
-    }
-
-    function saveGitHubConfig() {
-      const token = document.getElementById('githubToken').value.trim();
-      const repo = document.getElementById('githubRepo').value.trim();
-      
-      if (!token || !repo) {
-        alert('Bitte fülle alle Felder aus!');
-        return;
-      }
-
-      localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify({ token, repo }));
-      hideGitHubConfig();
-      syncTasks();
-    }
-
-    // Modifiziere die GitHub API Funktionen
+    // GitHub API Funktionen
     async function getFileContent() {
       const config = GITHUB_CONFIG; // Verwende die feste Konfiguration
       try {
@@ -870,6 +833,9 @@
         <span>${message}</span>
       `;
     }
+
+    // Entferne die Konfigurations-Event-Listener
+    document.removeEventListener('keydown', showGitHubConfig);
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
