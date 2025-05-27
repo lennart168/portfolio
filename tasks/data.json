@@ -4,9 +4,9 @@
     "client": "Thomas",
     "videos": 30,
     "deadline": "2025-05-28",
-    "done": false,
+    "done": true,
     "createdAt": "2025-05-27T19:21:31.818Z",
-    "updatedAt": "2025-05-27T21:16:22.638Z"
+    "updatedAt": "2025-05-27T21:16:35.678Z"
   },
   {
     "id": 1748380419828,
