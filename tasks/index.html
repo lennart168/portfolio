@@ -673,60 +673,71 @@
 
     // GitHub API Funktionen
     async function getFileContent() {
-      const config = GITHUB_CONFIG; // Verwende die feste Konfiguration
+      const config = GITHUB_CONFIG;
       try {
+        console.log('Versuche Daten von GitHub zu laden...');
         const response = await fetch(
           `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
           {
             headers: {
-              'Authorization': `token ${config.token}`,
+              'Authorization': `Bearer ${config.token}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           }
         );
 
+        console.log('GitHub API Antwort:', response.status, response.statusText);
+
         if (response.status === 404) {
+          console.log('Datei existiert noch nicht, wird erstellt...');
           return null;
         }
 
         if (!response.ok) {
-          throw new Error(`GitHub API Fehler: ${response.status} ${response.statusText}`);
+          const errorData = await response.json();
+          console.error('GitHub API Fehler Details:', errorData);
+          throw new Error(`GitHub API Fehler: ${response.status} ${response.statusText} - ${errorData.message || ''}`);
         }
 
         const data = await response.json();
+        console.log('Daten erfolgreich geladen');
         return {
           content: JSON.parse(atob(data.content)),
           sha: data.sha
         };
       } catch (error) {
-        console.error('Fehler beim Laden der Daten:', error);
+        console.error('Detaillierter Fehler beim Laden:', error);
         updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
         return null;
       }
     }
 
     async function updateFileContent(content, sha) {
-      const config = GITHUB_CONFIG; // Verwende die feste Konfiguration
+      const config = GITHUB_CONFIG;
       try {
+        console.log('Versuche tasks-Ordner zu prüfen...');
         // Prüfe zuerst, ob der tasks-Ordner existiert
         const tasksFolderResponse = await fetch(
           `https://api.github.com/repos/${config.repo}/contents/tasks`,
           {
             headers: {
-              'Authorization': `token ${config.token}`,
+              'Authorization': `Bearer ${config.token}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           }
         );
 
+        console.log('Tasks-Ordner Prüfung:', tasksFolderResponse.status, tasksFolderResponse.statusText);
+
         // Wenn der Ordner nicht existiert, erstelle ihn
         if (tasksFolderResponse.status === 404) {
+          console.log('Tasks-Ordner existiert nicht, wird erstellt...');
           const createFolderResponse = await fetch(
             `https://api.github.com/repos/${config.repo}/contents/tasks/.gitkeep`,
             {
               method: 'PUT',
               headers: {
-                'Authorization': `token ${config.token}`,
+                'Authorization': `Bearer ${config.token}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'Content-Type': 'application/json'
               },
@@ -737,37 +748,46 @@
             }
           );
 
+          console.log('Ordner-Erstellung:', createFolderResponse.status, createFolderResponse.statusText);
+
           if (!createFolderResponse.ok) {
-            throw new Error(`Konnte tasks-Ordner nicht erstellen: ${createFolderResponse.statusText}`);
+            const errorData = await createFolderResponse.json();
+            console.error('Fehler beim Erstellen des Ordners:', errorData);
+            throw new Error(`Konnte tasks-Ordner nicht erstellen: ${createFolderResponse.statusText} - ${errorData.message || ''}`);
           }
         }
 
+        console.log('Versuche Daten zu speichern...');
         // Jetzt die data.json erstellen/aktualisieren
         const response = await fetch(
           `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
           {
-            method: 'PUT', // Immer PUT verwenden, da wir die Datei erstellen oder aktualisieren
+            method: 'PUT',
             headers: {
-              'Authorization': `token ${config.token}`,
+              'Authorization': `Bearer ${config.token}`,
               'Accept': 'application/vnd.github.v3+json',
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               message: 'Update tasks',
               content: btoa(JSON.stringify(content, null, 2)),
-              sha: sha || null // sha nur setzen, wenn die Datei existiert
+              sha: sha || null
             })
           }
         );
 
+        console.log('Speicher-Response:', response.status, response.statusText);
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('GitHub API Fehler Details:', errorData);
           throw new Error(`GitHub API Fehler: ${response.status} ${response.statusText} - ${errorData.message || ''}`);
         }
 
+        console.log('Daten erfolgreich gespeichert');
         return true;
       } catch (error) {
-        console.error('Fehler beim Speichern der Daten:', error);
+        console.error('Detaillierter Fehler beim Speichern:', error);
         updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
         return false;
       }
