@@ -509,7 +509,7 @@
     <header>
       <h1>🎬 Video-Deadline-Manager</h1>
       <div style="display: flex; gap: 1rem; align-items: center;">
-        <button class="btn" onclick="showGitHubConfig(true)" id="configButton">
+        <button class="btn" id="configButton">
           <i class="fas fa-cog"></i> GitHub Token konfigurieren
         </button>
         <button class="theme-toggle" onclick="toggleTheme()">
@@ -937,6 +937,132 @@
         syncTasks();
       }
 
+      // Funktion zum Anzeigen/Ausblenden des Dialogs
+      function showGitHubConfig(show = true) {
+        console.log('Zeige GitHub Konfiguration:', show);
+        
+        if (!configDialog || !overlay) {
+          console.error('Dialog oder Overlay nicht gefunden!');
+          return;
+        }
+
+        if (show) {
+          configDialog.style.display = 'block';
+          overlay.style.display = 'block';
+          if (tokenInput) {
+            tokenInput.focus();
+            tokenInput.value = '';
+          }
+          if (configButton) {
+            configButton.classList.add('active');
+          }
+        } else {
+          configDialog.style.display = 'none';
+          overlay.style.display = 'none';
+          if (configButton) {
+            configButton.classList.remove('active');
+          }
+        }
+      }
+
+      // Funktion zum Aktualisieren des Token-Status
+      function updateTokenStatus(message, isValid = null) {
+        if (!tokenStatus || !tokenError) return;
+        
+        tokenStatus.textContent = message;
+        tokenStatus.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
+        
+        tokenError.textContent = isValid === false ? message : '';
+        tokenError.className = 'error-message' + (isValid === false ? ' active' : '');
+      }
+
+      // Funktion zum Aktualisieren des Sync-Status
+      function updateSyncStatus(status, message) {
+        const syncStatus = document.getElementById('syncStatus');
+        if (!syncStatus) return;
+        
+        syncStatus.className = `sync-status ${status}`;
+        syncStatus.innerHTML = `
+          <i class="fas fa-${status === 'syncing' ? 'sync fa-spin' : 
+                          status === 'error' ? 'exclamation-circle' : 
+                          'check-circle'}"></i>
+          <span>${message}</span>
+        `;
+      }
+
+      // Funktion zum Aktualisieren des Formular-Status
+      function updateFormStatus() {
+        if (!taskForm || !configButton) return;
+
+        if (!GITHUB_CONFIG.token) {
+          taskForm.classList.add('disabled');
+          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+          configButton.classList.add('btn-danger');
+          if (!configDialog.classList.contains('active')) {
+            showGitHubConfig(true);
+          }
+        } else {
+          taskForm.classList.remove('disabled');
+          updateTokenStatus('Token konfiguriert', true);
+          configButton.classList.remove('btn-danger');
+          configButton.classList.add('btn-success');
+        }
+      }
+
+      // Event-Listener für den Save-Button
+      if (saveButton) {
+        saveButton.addEventListener('click', function() {
+          if (!tokenInput) return;
+
+          const token = tokenInput.value.trim();
+          if (!token) {
+            updateTokenStatus('Bitte geben Sie einen Token ein', false);
+            return;
+          }
+
+          updateTokenStatus('Teste Token...');
+          GITHUB_CONFIG.token = token;
+
+          testGitHubAccess()
+            .then(() => {
+              updateTokenStatus('Token gültig', true);
+              showGitHubConfig(false);
+              updateFormStatus();
+              updateSyncStatus('success', 'Token gespeichert');
+              syncTasks();
+            })
+            .catch(error => {
+              updateTokenStatus('Token ungültig', false);
+              updateSyncStatus('error', `Token ungültig: ${error.message}`);
+            });
+        });
+      }
+
+      // Event-Listener für Enter-Taste im Token-Input
+      if (tokenInput) {
+        tokenInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            saveButton.click();
+          }
+        });
+      }
+
+      // Event-Listener für Overlay-Click
+      if (overlay) {
+        overlay.addEventListener('click', function() {
+          if (GITHUB_CONFIG.token) {
+            showGitHubConfig(false);
+          }
+        });
+      }
+
+      // Event-Listener für Config-Button
+      if (configButton) {
+        configButton.addEventListener('click', function() {
+          showGitHubConfig(true);
+        });
+      }
+
       // Mache Funktionen global verfügbar
       window.showGitHubConfig = showGitHubConfig;
       window.updateTokenStatus = updateTokenStatus;
@@ -954,6 +1080,14 @@
       window.formatDate = formatDate;
 
       // Initialisiere die Anwendung
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+      
+      const themeIcon = document.querySelector('.theme-toggle i');
+      if (themeIcon) {
+        themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+      }
+
       if (!GITHUB_CONFIG.token) {
         console.log('Kein Token gefunden, zeige Dialog...');
         setTimeout(() => showGitHubConfig(true), 100);
