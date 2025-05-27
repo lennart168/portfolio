@@ -518,13 +518,14 @@
       </div>
     </header>
 
-    <form class="task-form" id="taskForm">
+    <form class="task-form" id="taskForm" novalidate>
       <div class="form-group">
         <label for="client">Kunde/Projekt</label>
         <div class="client-input-wrapper">
           <input 
             type="text" 
             id="client" 
+            name="client"
             placeholder="z.B. Firma XYZ" 
             required 
             autocomplete="off"
@@ -534,25 +535,37 @@
       </div>
       <div class="form-group">
         <label for="videos">Anzahl Videos</label>
-        <input type="number" id="videos" min="1" placeholder="z.B. 3" required />
+        <input 
+          type="number" 
+          id="videos" 
+          name="videos"
+          min="1" 
+          placeholder="z.B. 3" 
+          required 
+        />
       </div>
       <div class="form-group">
         <label for="deadline">Deadline</label>
-        <input type="date" id="deadline" required />
+        <input 
+          type="date" 
+          id="deadline" 
+          name="deadline"
+          required 
+        />
       </div>
       <div class="form-group">
         <label>&nbsp;</label>
-        <button type="submit" class="btn">
+        <button type="submit" class="btn" id="addTaskButton">
           <i class="fas fa-plus"></i> Aufgabe hinzufügen
         </button>
       </div>
     </form>
 
     <div class="filters">
-      <button class="filter-btn active" onclick="filterTasks('all')">Alle</button>
-      <button class="filter-btn" onclick="filterTasks('active')">Aktiv</button>
-      <button class="filter-btn" onclick="filterTasks('completed')">Erledigt</button>
-      <button class="filter-btn" onclick="filterTasks('urgent')">Dringend</button>
+      <button type="button" class="filter-btn active" data-filter="all">Alle</button>
+      <button type="button" class="filter-btn" data-filter="active">Aktiv</button>
+      <button type="button" class="filter-btn" data-filter="completed">Erledigt</button>
+      <button type="button" class="filter-btn" data-filter="urgent">Dringend</button>
     </div>
 
     <div id="taskList" class="task-list"></div>
@@ -599,6 +612,9 @@
       const tokenError = document.getElementById('tokenError');
       const clientInput = document.getElementById('client');
       const clientSuggestions = document.getElementById('clientSuggestions');
+      const addTaskButton = document.getElementById('addTaskButton');
+      const taskList = document.getElementById('taskList');
+      const filterButtons = document.querySelectorAll('.filter-btn');
       
       console.log('DOM-Elemente gefunden:', {
         configDialog: !!configDialog,
@@ -610,7 +626,10 @@
         tokenStatus: !!tokenStatus,
         tokenError: !!tokenError,
         clientInput: !!clientInput,
-        clientSuggestions: !!clientSuggestions
+        clientSuggestions: !!clientSuggestions,
+        addTaskButton: !!addTaskButton,
+        taskList: !!taskList,
+        filterButtons: !!filterButtons
       });
 
       // Funktion zum Aktualisieren der Kundenliste
@@ -969,7 +988,7 @@
       }
 
       // Task-Management Funktionen
-      function addTask(event) {
+      async function addTask(event) {
         if (event) {
           event.preventDefault();
         }
@@ -1009,7 +1028,7 @@
         };
 
         tasks.push(newTask);
-        saveTasks();
+        await saveTasks();
 
         // Formular zurücksetzen
         clientInput.value = '';
@@ -1178,11 +1197,63 @@
 
       // Event-Listener für das Formular
       if (taskForm) {
-        taskForm.addEventListener('submit', function(event) {
-          event.preventDefault();
-          addTask(event);
+        taskForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          console.log('Formular-Submit erkannt');
+          
+          if (!GITHUB_CONFIG.token) {
+            updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
+            showGitHubConfig(true);
+            return;
+          }
+
+          const client = clientInput.value.trim();
+          const videos = parseInt(videosInput.value);
+          const deadline = deadlineInput.value;
+
+          if (!client || !videos || !deadline) {
+            updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
+            return;
+          }
+
+          try {
+            const newTask = {
+              id: Date.now(),
+              client: client,
+              videos: videos,
+              deadline: deadline,
+              done: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+
+            tasks.push(newTask);
+            await saveTasks();
+
+            // Formular zurücksetzen
+            taskForm.reset();
+            clientInput.focus();
+
+            // Aktualisiere die Anzeige
+            renderTasks();
+            updateSyncStatus('success', 'Aufgabe hinzugefügt');
+          } catch (error) {
+            console.error('Fehler beim Hinzufügen der Aufgabe:', error);
+            updateSyncStatus('error', `Fehler: ${error.message}`);
+          }
         });
       }
+
+      // Filter-Handler
+      filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const filter = this.dataset.filter;
+          filterButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          currentFilter = filter;
+          renderTasks();
+        });
+      });
 
       // Mache Funktionen global verfügbar
       window.showGitHubConfig = showGitHubConfig;
