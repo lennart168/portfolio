@@ -896,6 +896,11 @@
 
   <!-- Hauptskript -->
   <script>
+    // Globale Variablen
+    let tasks = [];
+    let currentFilter = 'all';
+    let syncInProgress = false;
+
     // Initialisiere die Anwendung
     document.addEventListener('DOMContentLoaded', async function() {
         console.log('DOM geladen, initialisiere Anwendung...');
@@ -961,6 +966,36 @@
 
         // Starte die Initialisierung
         await initializeApp();
+
+        // Task-Management Funktionen
+        function deleteTask(taskId) {
+            if (confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks().then(() => {
+                    renderTasks();
+                    updateSyncStatus('success', 'Aufgabe gelöscht');
+                }).catch(error => {
+                    console.error('Fehler beim Löschen:', error);
+                    updateSyncStatus('error', `Fehler beim Löschen: ${error.message}`);
+                });
+            }
+        }
+
+        // Mache Funktionen global verfügbar
+        window.deleteTask = deleteTask;
+        window.toggleDone = toggleDone;
+        window.saveTasks = saveTasks;
+        window.renderTasks = renderTasks;
+        window.getTaskStatus = getTaskStatus;
+        window.formatDate = formatDate;
+        window.showGitHubConfig = showGitHubConfig;
+        window.updateTokenStatus = updateTokenStatus;
+        window.updateSyncStatus = updateSyncStatus;
+        window.updateFormStatus = updateFormStatus;
+        window.showClientSuggestions = showClientSuggestions;
+        window.selectClient = selectClient;
+        window.testGitHubAccess = testGitHubAccess;
+        window.syncTasks = syncTasks;
 
         // ... rest of the existing event listeners and functions ...
     });
