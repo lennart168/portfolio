@@ -690,10 +690,59 @@
     }
 
     // GitHub API Funktionen
+    async function createTasksFolder() {
+      const config = window.GITHUB_CONFIG;
+      try {
+        console.log('Versuche tasks-Ordner zu erstellen...');
+        const response = await fetch(
+          `https://api.github.com/repos/${config.repo}/contents/tasks/README.md`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${config.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Video-Tasks-Manager'
+            },
+            body: JSON.stringify({
+              message: 'Create tasks folder',
+              content: btoa('# Tasks\n\nDieser Ordner enthält die gespeicherten Aufgaben.')
+            })
+          }
+        );
+
+        // 422 bedeutet, dass der Ordner bereits existiert
+        if (response.status === 422) {
+          console.log('tasks-Ordner existiert bereits');
+          return true;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Fehler beim Erstellen des Ordners: ${errorText}`);
+        }
+
+        console.log('tasks-Ordner erfolgreich erstellt');
+        return true;
+      } catch (error) {
+        console.error('Fehler beim Erstellen des Ordners:', error);
+        return false;
+      }
+    }
+
     async function updateFileContent(content, sha) {
       const config = window.GITHUB_CONFIG;
       try {
-        // Direkt versuchen, die data.json zu erstellen/aktualisieren
+        // Stelle sicher, dass der tasks-Ordner existiert
+        const folderCreated = await createTasksFolder();
+        if (!folderCreated) {
+          throw new Error('Konnte tasks-Ordner nicht erstellen');
+        }
+
+        // Warte kurz, damit GitHub die Änderungen verarbeiten kann
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Jetzt die data.json erstellen/aktualisieren
         console.log('Versuche data.json zu erstellen/aktualisieren...');
         console.log('Repository:', config.repo);
         console.log('Token vorhanden:', !!config.token);
