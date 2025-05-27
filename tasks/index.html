@@ -1100,20 +1100,13 @@
                 }
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Fehler beim Laden:', response.status, errorText);
-                    throw new Error(`Fehler beim Laden (${response.status}): ${errorText}`);
+                    throw new Error(`Fehler beim Laden (${response.status}): ${await response.text()}`);
                 }
 
                 const data = await response.json();
                 console.log('Daten erfolgreich geladen, SHA:', data.sha);
-                
-                // Dekodiere und parse den Inhalt
-                const content = JSON.parse(atob(data.content));
-                console.log('Geladene Daten:', JSON.stringify(content, null, 2));
-                
                 return {
-                    content: content,
+                    content: JSON.parse(atob(data.content)),
                     sha: data.sha
                 };
             } catch (error) {
@@ -1129,7 +1122,6 @@
             }
             try {
                 console.log('Aktualisiere Daten auf GitHub...');
-                console.log('Zu speichernde Daten:', JSON.stringify(content, null, 2));
                 const repoPath = `${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
                 
                 // Wenn keine SHA vorhanden ist, versuche sie zu holen
@@ -1186,10 +1178,9 @@
             updateSyncStatus('syncing', 'Synchronisiere...');
 
             try {
-                console.log('Starte Synchronisation...');
                 // Versuche zuerst, die Datei zu erstellen, wenn sie nicht existiert
                 const existingData = await getFileContent();
-                console.log('Vorhandene Daten:', existingData ? JSON.stringify(existingData.content) : 'Keine');
+                console.log('Vorhandene Daten:', existingData ? 'Ja' : 'Nein');
                 
                 if (!existingData) {
                     console.log('Erstelle neue Datei mit', tasks.length, 'Tasks');
@@ -1199,10 +1190,8 @@
                     }
                     const success = await updateFileContent(tasks, null);
                     if (success) {
-                        console.log('Neue Datei erstellt');
                         updateSyncStatus('success', 'Synchronisiert');
-                        renderTasks();
-                        return;
+      renderTasks();
                     }
                 } else {
                     // Wenn die Datei existiert, merge die Daten
@@ -1211,38 +1200,26 @@
                     console.log('Lokale Tasks:', tasks.length);
                     
                     // Stelle sicher, dass remoteTasks ein Array ist
-                    if (!Array.isArray(remoteTasks)) {
-                        console.error('Remote Tasks ist kein Array:', remoteTasks);
-                        throw new Error('Ungültiges Datenformat auf GitHub');
+                    const mergedTasks = Array.isArray(remoteTasks) ? [...remoteTasks] : [];
+                    
+                    // Füge neue lokale Tasks hinzu
+                    if (Array.isArray(tasks)) {
+                        tasks.forEach(localTask => {
+                            const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
+                            if (existingIndex === -1) {
+                                mergedTasks.push(localTask);
+                            } else if (localTask.updatedAt > mergedTasks[existingIndex].updatedAt) {
+                                mergedTasks[existingIndex] = localTask;
+                            }
+                        });
                     }
 
-                    // Erstelle eine Map der lokalen Tasks für schnellen Zugriff
-                    const localTaskMap = new Map(tasks.map(task => [task.id, task]));
-                    
-                    // Merge die Tasks
-                    const mergedTasks = [...remoteTasks];
-                    
-                    // Füge neue oder aktualisierte lokale Tasks hinzu
-                    tasks.forEach(localTask => {
-                        const existingIndex = mergedTasks.findIndex(t => t.id === localTask.id);
-                        if (existingIndex === -1) {
-                            console.log('Füge neue Task hinzu:', localTask.id);
-                            mergedTasks.push(localTask);
-                        } else if (new Date(localTask.updatedAt) > new Date(mergedTasks[existingIndex].updatedAt)) {
-                            console.log('Aktualisiere Task:', localTask.id);
-                            mergedTasks[existingIndex] = localTask;
-                        }
-                    });
-
-                    // Aktualisiere das lokale tasks Array
                     tasks = mergedTasks;
                     console.log('Nach Merge:', tasks.length, 'Tasks');
-                    console.log('Tasks nach Merge:', JSON.stringify(tasks, null, 2));
 
                     // Speichere aktualisierte Daten mit der bekannten SHA
                     const success = await updateFileContent(tasks, existingData.sha);
                     if (success) {
-                        console.log('Daten erfolgreich aktualisiert');
                         updateSyncStatus('success', 'Synchronisiert');
                         renderTasks();
                     }
@@ -1250,7 +1227,6 @@
             } catch (error) {
                 console.error('Synchronisationsfehler:', error);
                 updateSyncStatus('error', `Synchronisationsfehler: ${error.message}`);
-                throw error;
             } finally {
                 syncInProgress = false;
             }
@@ -1323,18 +1299,22 @@
                 const toggleButton = div.querySelector('.toggle-done');
                 const deleteButton = div.querySelector('.delete-task');
 
-                toggleButton.addEventListener('click', () => {
-                    toggleDone(task.id);
-                });
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', () => {
+                        toggleDone(task.id);
+                    });
+                }
 
-                deleteButton.addEventListener('click', async () => {
-                    try {
-                        await deleteTask(task.id);
-                    } catch (error) {
-                        console.error('Fehler beim Löschen:', error);
-                        alert('Fehler beim Löschen der Aufgabe: ' + error.message);
-                    }
-                });
+                if (deleteButton) {
+                    deleteButton.addEventListener('click', async () => {
+                        try {
+                            await deleteTask(task.id);
+                        } catch (error) {
+                            console.error('Fehler beim Löschen:', error);
+                            alert('Fehler beim Löschen der Aufgabe: ' + error.message);
+                        }
+                    });
+                }
 
                 taskList.appendChild(div);
             });
@@ -1372,14 +1352,12 @@
     }
 
         async function deleteTask(taskId) {
-            console.log('Versuche Task zu löschen:', taskId);
-            
             if (!confirm("Möchten Sie diese Aufgabe wirklich löschen?")) {
                 return;
             }
 
             try {
-                console.log('Lösche Task:', taskId);
+                // Aktualisiere den Sync-Status
                 updateSyncStatus('syncing', 'Lösche Aufgabe...');
 
                 // Entferne die Task aus dem Array
@@ -1387,13 +1365,11 @@
                 if (taskIndex === -1) {
                     throw new Error('Aufgabe nicht gefunden');
                 }
-
+                
                 tasks.splice(taskIndex, 1);
-                console.log('Task aus Array entfernt, verbleibende Tasks:', tasks.length);
-
+                
                 // Speichere und synchronisiere die Änderungen
                 await saveTasks();
-                console.log('Änderungen gespeichert');
                 
                 // Aktualisiere die Anzeige
                 renderTasks();
@@ -1432,6 +1408,20 @@
             }
         }
 
+        // Mache Funktionen global verfügbar
+        window.updateFormStatus = updateFormStatus;
+        window.updateTokenStatus = updateTokenStatus;
+        window.updateSyncStatus = updateSyncStatus;
+        window.showGitHubConfig = showGitHubConfig;
+        window.testGitHubAccess = testGitHubAccess;
+        window.syncTasks = syncTasks;
+        window.renderTasks = renderTasks;
+        window.toggleDone = toggleDone;
+        window.deleteTask = deleteTask;
+        window.saveTasks = saveTasks;
+        window.getTaskStatus = getTaskStatus;
+        window.formatDate = formatDate;
+
         // Initialisiere GitHub-Konfiguration und Tasks
         async function initializeApp() {
             if (!GITHUB_CONFIG.token) {
@@ -1443,16 +1433,8 @@
                 updateFormStatus();
                 try {
                     updateSyncStatus('syncing', 'Lade Aufgaben...');
-                    
-                    // Prüfe, ob Daten existieren
-                    const existingData = await getFileContent();
-                    if (!existingData || !existingData.content || existingData.content.length === 0) {
-                        console.log('Keine Daten gefunden, initialisiere mit Beispielaufgaben...');
-                        await initializeTasks();
-                    } else {
-                        await syncTasks();
-                    }
-                    
+                    await syncTasks();
+                    renderTasks();
                     updateSyncStatus('success', 'Synchronisiert');
                 } catch (error) {
                     console.error('Fehler bei der initialen Synchronisation:', error);
@@ -1461,52 +1443,8 @@
             }
         }
 
-        // Funktion zum Initialisieren der Beispielaufgaben
-        async function initializeTasks() {
-            const exampleTasks = [
-                {
-                    id: Date.now(),
-                    client: "Beispiel GmbH",
-                    videos: 3,
-                    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 Tage in der Zukunft
-                    done: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: Date.now() + 1,
-                    client: "Muster AG",
-                    videos: 2,
-                    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 Tage in der Zukunft
-                    done: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: Date.now() + 2,
-                    client: "Test GmbH",
-                    videos: 5,
-                    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 Tage in der Zukunft
-                    done: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: Date.now() + 3,
-                    client: "Demo AG",
-                    videos: 1,
-                    deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 Tag in der Zukunft
-                    done: true,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
-            ];
-
-            console.log('Initialisiere mit Beispielaufgaben:', JSON.stringify(exampleTasks, null, 2));
-            tasks = exampleTasks;
-            await updateFileContent(exampleTasks, null);
-            renderTasks();
-        }
+        // Starte die Initialisierung
+        await initializeApp();
 
         // Event-Listener für Filter-Buttons
         document.querySelectorAll('.filter-btn').forEach(button => {
