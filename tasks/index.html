@@ -733,7 +733,7 @@
       </div>
     </header>
 
-    <form class="task-form" id="taskForm" novalidate>
+    <form class="task-form" id="taskForm" novalidate onsubmit="return false;">
       <div class="form-group">
         <label for="client">Kunde/Projekt</label>
         <div class="client-input-wrapper">
@@ -1310,53 +1310,11 @@
         if (event) {
           event.preventDefault();
         }
-        
-        if (!GITHUB_CONFIG.token) {
-          updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
-          showGitHubConfig(true);
-          return false;
+        console.log('Manueller Aufruf von addTask');
+        const form = document.getElementById('taskForm');
+        if (form) {
+          form.dispatchEvent(new Event('submit'));
         }
-
-        const clientInput = document.getElementById('client');
-        const videosInput = document.getElementById('videos');
-        const deadlineInput = document.getElementById('deadline');
-
-        if (!clientInput || !videosInput || !deadlineInput) {
-          console.error('Formular-Elemente nicht gefunden');
-          return false;
-        }
-
-        const client = clientInput.value.trim();
-        const videos = parseInt(videosInput.value);
-        const deadline = deadlineInput.value;
-
-        if (!client || !videos || !deadline) {
-          updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
-          return false;
-        }
-
-        const newTask = {
-          id: Date.now(),
-          client: client,
-          videos: videos,
-          deadline: deadline,
-          done: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        tasks.push(newTask);
-        await saveTasks();
-
-        // Formular zurücksetzen
-        clientInput.value = '';
-        videosInput.value = '';
-        deadlineInput.value = '';
-        clientInput.focus();
-
-        // Aktualisiere die Anzeige
-        renderTasks();
-        updateSyncStatus('success', 'Aufgabe hinzugefügt');
         return false;
       }
 
@@ -1440,25 +1398,6 @@
         `;
       }
 
-      // Funktion zum Aktualisieren des Formular-Status
-      function updateFormStatus() {
-        if (!taskForm || !configButton) return;
-
-        if (!GITHUB_CONFIG.token) {
-          taskForm.classList.add('disabled');
-          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
-          configButton.classList.add('btn-danger');
-          if (!configDialog.classList.contains('active')) {
-            showGitHubConfig(true);
-          }
-        } else {
-          taskForm.classList.remove('disabled');
-          updateTokenStatus('Token konfiguriert', true);
-          configButton.classList.remove('btn-danger');
-          configButton.classList.add('btn-success');
-        }
-      }
-
       // Event-Listener für den Save-Button
       if (saveButton) {
         saveButton.addEventListener('click', function() {
@@ -1515,26 +1454,33 @@
 
       // Event-Listener für das Formular
       if (taskForm) {
+        console.log('Formular gefunden, füge Event-Listener hinzu');
         taskForm.addEventListener('submit', async function(e) {
-          e.preventDefault();
           console.log('Formular-Submit erkannt');
+          e.preventDefault();
+          e.stopPropagation();
           
           if (!GITHUB_CONFIG.token) {
+            console.log('Kein Token gefunden');
             updateSyncStatus('error', 'Bitte konfigurieren Sie zuerst den GitHub Token');
             showGitHubConfig(true);
-            return;
+            return false;
           }
 
-          const client = clientInput.value.trim();
-          const videos = parseInt(videosInput.value);
-          const deadline = deadlineInput.value;
+          const client = document.getElementById('client').value.trim();
+          const videos = parseInt(document.getElementById('videos').value);
+          const deadline = document.getElementById('deadline').value;
+
+          console.log('Formular-Daten:', { client, videos, deadline });
 
           if (!client || !videos || !deadline) {
+            console.log('Formular nicht vollständig ausgefüllt');
             updateSyncStatus('error', 'Bitte füllen Sie alle Felder aus');
-            return;
+            return false;
           }
 
           try {
+            console.log('Erstelle neue Aufgabe');
             const newTask = {
               id: Date.now(),
               client: client,
@@ -1545,20 +1491,25 @@
               updatedAt: new Date().toISOString()
             };
 
+            console.log('Füge Aufgabe hinzu:', newTask);
             tasks.push(newTask);
+            
+            console.log('Speichere Tasks');
             await saveTasks();
 
-            // Formular zurücksetzen
+            console.log('Setze Formular zurück');
             taskForm.reset();
-            clientInput.focus();
+            document.getElementById('client').focus();
 
-            // Aktualisiere die Anzeige
+            console.log('Aktualisiere Anzeige');
             renderTasks();
             updateSyncStatus('success', 'Aufgabe hinzugefügt');
           } catch (error) {
             console.error('Fehler beim Hinzufügen der Aufgabe:', error);
             updateSyncStatus('error', `Fehler: ${error.message}`);
           }
+          
+          return false;
         });
       }
 
