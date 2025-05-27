@@ -362,6 +362,8 @@
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
       z-index: 1000;
       display: none;
+      max-width: 500px;
+      width: 90%;
     }
 
     .github-config.active {
@@ -394,6 +396,38 @@
     .overlay.active {
       display: block;
     }
+
+    .task-form.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .github-config .error-message {
+      color: var(--danger);
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
+      background: rgba(239, 68, 68, 0.1);
+      display: none;
+    }
+
+    .github-config .error-message.active {
+      display: block;
+    }
+
+    .github-config .token-status {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .github-config .token-status.valid {
+      color: var(--success);
+    }
+
+    .github-config .token-status.invalid {
+      color: var(--danger);
+    }
   </style>
 </head>
 <body data-theme="light">
@@ -405,7 +439,7 @@
       </button>
     </header>
 
-    <form class="task-form" onsubmit="addTask(event)">
+    <form class="task-form" onsubmit="addTask(event)" id="taskForm">
       <div class="form-group">
         <label for="client">Kunde/Projekt</label>
         <div class="client-input-wrapper">
@@ -460,7 +494,9 @@
       <label for="githubToken">GitHub Personal Access Token</label>
       <input type="password" id="githubToken" placeholder="ghp_..." />
       <small>Erstelle einen Token mit 'repo' Berechtigung unter GitHub Settings > Developer Settings > Personal Access Tokens</small>
+      <div class="token-status" id="tokenStatus"></div>
     </div>
+    <div class="error-message" id="tokenError"></div>
     <div class="form-group">
       <button class="btn" onclick="saveGitHubConfig()">Speichern</button>
     </div>
@@ -569,6 +605,11 @@
     function addTask(event) {
       event.preventDefault();
       
+      if (!GITHUB_CONFIG.token) {
+        showGitHubConfig(true);
+        return;
+      }
+
       const client = document.getElementById("client").value.trim();
       const videos = parseInt(document.getElementById("videos").value);
       const deadline = document.getElementById("deadline").value;
@@ -708,6 +749,34 @@
       return true;
     }
 
+    // Funktion zum Aktualisieren des Token-Status
+    function updateTokenStatus(message, isValid = null) {
+      const status = document.getElementById('tokenStatus');
+      const error = document.getElementById('tokenError');
+      if (status) {
+        status.textContent = message;
+        status.className = 'token-status' + (isValid === null ? '' : isValid ? ' valid' : ' invalid');
+      }
+      if (error) {
+        error.textContent = isValid === false ? message : '';
+        error.className = 'error-message' + (isValid === false ? ' active' : '');
+      }
+    }
+
+    // Funktion zum Aktualisieren des Formular-Status
+    function updateFormStatus() {
+      const form = document.getElementById('taskForm');
+      if (form) {
+        if (!GITHUB_CONFIG.token) {
+          form.classList.add('disabled');
+          updateTokenStatus('Bitte konfigurieren Sie zuerst den GitHub Token', false);
+        } else {
+          form.classList.remove('disabled');
+          updateTokenStatus('Token konfiguriert', true);
+        }
+      }
+    }
+
     // Modifiziere die saveGitHubConfig Funktion
     function saveGitHubConfig() {
       const tokenInput = document.getElementById('githubToken');
@@ -715,19 +784,23 @@
 
       const token = tokenInput.value.trim();
       if (!token) {
-        alert('Bitte geben Sie einen Token ein');
+        updateTokenStatus('Bitte geben Sie einen Token ein', false);
         return;
       }
       
+      updateTokenStatus('Teste Token...');
       GITHUB_CONFIG.token = token;
-      showGitHubConfig(false);
       
       // Teste den Token
       testGitHubAccess().then(() => {
+        updateTokenStatus('Token gültig', true);
+        showGitHubConfig(false);
+        updateFormStatus();
         updateSyncStatus('success', 'Token gespeichert');
         // Lade die Daten neu
         syncTasks();
       }).catch(error => {
+        updateTokenStatus('Token ungültig', false);
         updateSyncStatus('error', `Token ungültig: ${error.message}`);
         // Zeige den Konfigurationsdialog wieder an
         showGitHubConfig(true);
@@ -975,6 +1048,9 @@
         icon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
       }
 
+      // Aktualisiere den Formular-Status
+      updateFormStatus();
+
       // Prüfe, ob ein Token vorhanden ist
       if (!GITHUB_CONFIG.token) {
         showGitHubConfig(true);
@@ -984,6 +1060,7 @@
       try {
         // Teste GitHub-Zugriff beim Start
         await testGitHubAccess();
+        updateTokenStatus('Token gültig', true);
         
         // Lade initial Daten
         const existingData = await getFileContent();
@@ -994,6 +1071,7 @@
       } catch (error) {
         console.error('Initialisierungsfehler:', error);
         updateSyncStatus('error', `Initialisierungsfehler: ${error.message}`);
+        updateTokenStatus('Token ungültig', false);
         // Zeige den Konfigurationsdialog an
         showGitHubConfig(true);
       }
