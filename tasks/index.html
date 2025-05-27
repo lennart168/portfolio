@@ -689,102 +689,17 @@
       }
     }
 
-    // GitHub API Funktionen
-    async function createTasksFolder() {
+    // Test-Funktion für GitHub-Zugriff
+    async function testGitHubAccess() {
       const config = window.GITHUB_CONFIG;
       try {
-        console.log('Versuche tasks-Ordner zu erstellen...');
-        const response = await fetch(
-          `https://api.github.com/repos/${config.repo}/contents/tasks/README.md`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${config.token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json',
-              'User-Agent': 'Video-Tasks-Manager'
-            },
-            body: JSON.stringify({
-              message: 'Create tasks folder',
-              content: btoa('# Tasks\n\nDieser Ordner enthält die gespeicherten Aufgaben.')
-            })
-          }
-        );
-
-        // 422 bedeutet, dass der Ordner bereits existiert
-        if (response.status === 422) {
-          console.log('tasks-Ordner existiert bereits');
-          return true;
-        }
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Fehler beim Erstellen des Ordners: ${errorText}`);
-        }
-
-        console.log('tasks-Ordner erfolgreich erstellt');
-        return true;
-      } catch (error) {
-        console.error('Fehler beim Erstellen des Ordners:', error);
-        return false;
-      }
-    }
-
-    async function updateFileContent(content, sha) {
-      const config = window.GITHUB_CONFIG;
-      try {
-        // Direkt versuchen, die data.json zu erstellen/aktualisieren
-        console.log('Versuche data.json zu erstellen/aktualisieren...');
+        console.log('Teste GitHub-Zugriff...');
         console.log('Repository:', config.repo);
-        console.log('Token vorhanden:', !!config.token);
+        console.log('Token:', config.token.substring(0, 4) + '...');
         
+        // Teste Repository-Zugriff
         const response = await fetch(
-          `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${config.token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json',
-              'User-Agent': 'Video-Tasks-Manager'
-            },
-            body: JSON.stringify({
-              message: 'Update tasks',
-              content: btoa(JSON.stringify(content, null, 2)),
-              sha: sha || null
-            })
-          }
-        );
-
-        console.log('API Response Status:', response.status);
-        console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
-        
-        const responseText = await response.text();
-        console.log('API Response Body:', responseText);
-
-        if (!response.ok) {
-          throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
-        }
-
-        const responseData = JSON.parse(responseText);
-        console.log('Daten erfolgreich gespeichert');
-        return true;
-      } catch (error) {
-        console.error('Detaillierter Fehler beim Speichern:', error);
-        updateSyncStatus('error', `Fehler beim Speichern: ${error.message}`);
-        return false;
-      }
-    }
-
-    async function getFileContent() {
-      const config = window.GITHUB_CONFIG;
-      try {
-        console.log('Versuche Daten von GitHub zu laden...');
-        console.log('Repository:', config.repo);
-        console.log('Token vorhanden:', !!config.token);
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${config.repo}/contents/tasks/data.json`,
+          `https://api.github.com/repos/${config.repo}`,
           {
             headers: {
               'Authorization': `token ${config.token}`,
@@ -794,31 +709,41 @@
           }
         );
 
-        console.log('API Response Status:', response.status);
-        console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
-        
+        console.log('Repository Test Status:', response.status);
         const responseText = await response.text();
-        console.log('API Response Body:', responseText);
-
-        if (response.status === 404) {
-          console.log('Datei existiert noch nicht');
-          return null;
-        }
+        console.log('Repository Test Response:', responseText);
 
         if (!response.ok) {
-          throw new Error(`GitHub API Fehler (${response.status}): ${responseText}`);
+          throw new Error(`Repository nicht gefunden oder kein Zugriff (${response.status}): ${responseText}`);
         }
 
-        const data = JSON.parse(responseText);
-        console.log('Daten erfolgreich geladen');
+        // Teste tasks-Ordner-Zugriff
+        const tasksResponse = await fetch(
+          `https://api.github.com/repos/${config.repo}/contents/tasks`,
+          {
+            headers: {
+              'Authorization': `token ${config.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'Video-Tasks-Manager'
+            }
+          }
+        );
+
+        console.log('Tasks-Ordner Test Status:', tasksResponse.status);
+        const tasksResponseText = await tasksResponse.text();
+        console.log('Tasks-Ordner Test Response:', tasksResponseText);
+
+        if (!tasksResponse.ok && tasksResponse.status !== 404) {
+          throw new Error(`Fehler beim Zugriff auf tasks-Ordner (${tasksResponse.status}): ${tasksResponseText}`);
+        }
+
         return {
-          content: JSON.parse(atob(data.content)),
-          sha: data.sha
+          repositoryAccess: response.ok,
+          tasksFolderExists: tasksResponse.ok
         };
       } catch (error) {
-        console.error('Detaillierter Fehler beim Laden:', error);
-        updateSyncStatus('error', `Fehler beim Laden: ${error.message}`);
-        return null;
+        console.error('GitHub-Zugriffstest fehlgeschlagen:', error);
+        throw error;
       }
     }
 
@@ -829,6 +754,18 @@
       updateSyncStatus('syncing', 'Synchronisiere...');
 
       try {
+        // Teste zuerst den GitHub-Zugriff
+        const accessTest = await testGitHubAccess();
+        console.log('GitHub-Zugriffstest Ergebnis:', accessTest);
+
+        if (!accessTest.repositoryAccess) {
+          throw new Error('Kein Zugriff auf das Repository. Bitte überprüfen Sie Token und Repository-Name.');
+        }
+
+        if (!accessTest.tasksFolderExists) {
+          throw new Error('Der tasks-Ordner wurde nicht gefunden. Bitte erstellen Sie den Ordner manuell auf GitHub.');
+        }
+
         // Versuche zuerst, die Datei zu erstellen, wenn sie nicht existiert
         const existingData = await getFileContent();
         console.log('Vorhandene Daten:', existingData ? 'Ja' : 'Nein');
@@ -901,12 +838,20 @@
       const icon = document.querySelector('.theme-toggle i');
       icon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
 
-      // Lade initial Daten
-      const existingData = await getFileContent();
-      if (existingData) {
-        tasks = existingData.content;
+      try {
+        // Teste GitHub-Zugriff beim Start
+        await testGitHubAccess();
+        
+        // Lade initial Daten
+        const existingData = await getFileContent();
+        if (existingData) {
+          tasks = existingData.content;
+        }
+        renderTasks();
+      } catch (error) {
+        console.error('Initialisierungsfehler:', error);
+        updateSyncStatus('error', `Initialisierungsfehler: ${error.message}`);
       }
-      renderTasks();
     });
   </script>
 </body>
