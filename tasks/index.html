@@ -469,9 +469,27 @@
     </div>
   </div>
 
-  <!-- Konfiguration einbinden -->
-  <script src="config.js"></script>
+  <!-- Konfiguration -->
   <script>
+    // Fallback-Konfiguration, falls config.js nicht geladen werden kann
+    window.GITHUB_CONFIG = {
+      token: "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",
+      repo: "lennart168/portfolio"
+    };
+  </script>
+  <script src="config.js" onerror="console.log('Konfigurationsdatei konnte nicht geladen werden, verwende Fallback-Konfiguration')"></script>
+  
+  <!-- Hauptskript -->
+  <script>
+    // Stelle sicher, dass GITHUB_CONFIG verfügbar ist
+    if (typeof GITHUB_CONFIG === 'undefined') {
+      console.error('GitHub Konfiguration nicht gefunden!');
+      document.getElementById('syncStatus').innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Fehler: Konfiguration nicht gefunden</span>
+      `;
+    }
+
     let tasks = [];
     let currentFilter = 'all';
     let syncInProgress = false;
